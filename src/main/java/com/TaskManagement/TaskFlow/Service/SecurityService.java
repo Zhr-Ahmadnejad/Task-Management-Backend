@@ -1,7 +1,11 @@
 package com.TaskManagement.TaskFlow.Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 import com.TaskManagement.TaskFlow.Model.Users;
 import com.TaskManagement.TaskFlow.Repository.SecurityRepository;
@@ -13,13 +17,48 @@ public class SecurityService {
     @Autowired
     private SecurityRepository securityRepository;
 
-    public void registerUser(Users user) throws Exception {
+    @Autowired
+    private TokenService tokenService;
 
-        if (securityRepository.existsByEmail(user.getEmail())) {
-            throw new Exception("این ایمیل قبلاً استفاده شده است");
+    public ResponseEntity<?> loginUser(String email, String password) {
+        try {
+            // جستجوی کاربر بر اساس ایمیل
+            Optional<Users> optionalUser = securityRepository.findByEmail(email);
+            if (optionalUser.isPresent()) {
+                Users user = optionalUser.get();
+                // چک کردن رمزعبور
+                if (user.getPassword().equals(password)) {
+                    // ایجاد توکن برای کاربر موفق
+                    String token = tokenService.generateToken(email);
+                    return ResponseEntity.ok().body(token);
+                } else {
+                    // رمزعبور اشتباه است
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("اطلاعات کاربری اشتباه است");
+                }
+            } else {
+                // کاربری با این ایمیل یافت نشد
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("اطلاعات کاربری اشتباه است");
+            }
+        } catch (Exception e) {
+            // خطایی در هنگام ورود رخ داده است
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
+    }
+    
 
-        securityRepository.save(user);
+    public ResponseEntity<String> registerUser(Users user) {
+        try {
+            // بررسی اینکه آیا کاربر با این ایمیل قبلاً ثبت‌نام کرده یا نه
+            if (securityRepository.existsByEmail(user.getEmail())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("این ایمیل قبلاً استفاده شده است");
+            }
+            // ذخیره کاربر در پایگاه داده
+            securityRepository.save(user);
+            return ResponseEntity.ok("ثبت‌نام با موفقیت انجام شد");
+        } catch (Exception e) {
+            // خطایی در هنگام ثبت‌نام رخ داده است
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
 }

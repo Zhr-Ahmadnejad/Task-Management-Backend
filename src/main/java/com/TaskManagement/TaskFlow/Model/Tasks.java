@@ -32,6 +32,10 @@ public class Tasks {
     @JoinColumn(name = "state_id")
     private TaskStates states;
 
+    @ManyToOne
+    @JoinColumn(name = "board_id")
+    private Boards board;
+
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
     private Set<SubTasks> subTasks;
 

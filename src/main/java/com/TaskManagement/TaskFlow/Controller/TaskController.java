@@ -1,15 +1,20 @@
 package com.TaskManagement.TaskFlow.Controller;
 
+import com.TaskManagement.TaskFlow.Dto.TaskDto;
 import com.TaskManagement.TaskFlow.Model.SubTasks;
 import com.TaskManagement.TaskFlow.Model.Tasks;
 import com.TaskManagement.TaskFlow.Service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+
+import javax.naming.NameNotFoundException;
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/user/board/tasks")
@@ -35,10 +40,13 @@ public class TaskController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @PostMapping
-    public ResponseEntity<Tasks> createTask(@RequestBody Tasks task) {
-        Tasks createdTask = taskService.createTask(task);
-        return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
+    @PostMapping()
+    public ResponseEntity<String> createTask(@RequestHeader(value = "token") String token, @Valid @RequestBody TaskDto taskDTO, BindingResult bindingResult) throws NameNotFoundException {
+        if (bindingResult.hasErrors()) {
+            return new ResponseEntity<>(bindingResult.getFieldError().getDefaultMessage(), HttpStatus.BAD_REQUEST);
+        }
+        taskService.createTask(token , taskDTO );
+        return new ResponseEntity<>("Task saved successfully", HttpStatus.CREATED);
     }
 
     @PutMapping("/{taskId}")

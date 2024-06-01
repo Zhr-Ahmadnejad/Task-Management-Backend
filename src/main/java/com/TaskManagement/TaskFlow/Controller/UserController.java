@@ -1,6 +1,7 @@
 package com.TaskManagement.TaskFlow.Controller;
 
 import com.TaskManagement.TaskFlow.Model.Users;
+import com.TaskManagement.TaskFlow.Response.UserResponse;
 import com.TaskManagement.TaskFlow.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+
+import javax.naming.NameNotFoundException;
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
@@ -40,15 +45,26 @@ public class UserController {
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{userId}")
-    public ResponseEntity<Users> updateUser(@PathVariable Long userId, @RequestBody Users user) {
-        Users updatedUser = userService.updateUser(userId, user);
-        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+    @PutMapping
+    public ResponseEntity<Users> updateUser(
+            @RequestHeader("Authorization") String token,
+            @Valid @RequestBody Users newUser) {
+        try {
+            Users updatedUser = userService.updateUser(token, newUser);
+            return ResponseEntity.ok(updatedUser);
+        } catch (NameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<UserResponse> getUserInfo(HttpServletRequest request) {
+        return userService.getUserInfo(request);
     }
 }

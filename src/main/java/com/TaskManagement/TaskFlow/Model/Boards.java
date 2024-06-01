@@ -27,4 +27,7 @@ public class Boards {
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL)
     private Set<TaskStates> states;
 
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL)
+    private Set<Tasks> tasks;
+
 }
