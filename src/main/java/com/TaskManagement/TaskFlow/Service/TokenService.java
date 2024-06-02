@@ -9,12 +9,14 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.TaskManagement.TaskFlow.Exception.ExpiredTokenException;
 import com.TaskManagement.TaskFlow.Exception.InvalidTokenException;
 import com.TaskManagement.TaskFlow.Exception.TokenValidationException;
+
 
 import java.security.Key;
 
@@ -28,8 +30,6 @@ public class TokenService {
     @Value("${jwt.expiration}")
     private Long expiration;
     
-
-
 
     private Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256); // Change here
 

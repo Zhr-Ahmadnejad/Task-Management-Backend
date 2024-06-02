@@ -1,5 +1,7 @@
 package com.TaskManagement.TaskFlow.Controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,10 +27,10 @@ public class TaskStateController {
     }
 
     @PostMapping
-    public ResponseEntity<TaskStateVo> createState(@RequestHeader("Authorization") String token,
+    public ResponseEntity<List<TaskStateVo>> createState(@RequestHeader("Authorization") String token,
             @RequestBody TaskStateDto taskStateDto) {
         try {
-            ResponseEntity<TaskStateVo> response = taskStateService.createTaskState(taskStateDto, token);
+            ResponseEntity<List<TaskStateVo>> response = taskStateService.createTaskState(token , taskStateDto);
             return response;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

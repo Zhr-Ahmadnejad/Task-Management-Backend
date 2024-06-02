@@ -15,7 +15,6 @@ import javax.naming.NameNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.security.access.AccessDeniedException;
 
 
 @Service
@@ -101,5 +100,10 @@ public class UserService {
 
     public Long findIdByEmail(String email){
         return userRepository.findIdByEmail(email);
+    }
+    public Users findUserByEmail(String email){
+        return userRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+
     }
 }
