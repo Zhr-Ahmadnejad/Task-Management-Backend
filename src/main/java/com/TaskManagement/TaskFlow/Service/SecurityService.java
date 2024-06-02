@@ -46,7 +46,7 @@ public class SecurityService {
     }
     
 
-    public ResponseEntity<String> registerUser(Users user) {
+    public ResponseEntity<?> registerUser(Users user) {
         try {
             // بررسی اینکه آیا کاربر با این ایمیل قبلاً ثبت‌نام کرده یا نه
             if (securityRepository.existsByEmail(user.getEmail())) {
@@ -54,7 +54,8 @@ public class SecurityService {
             }
             // ذخیره کاربر در پایگاه داده
             securityRepository.save(user);
-            return ResponseEntity.ok("ثبت‌نام با موفقیت انجام شد");
+            String token = tokenService.generateToken(user.getEmail());
+            return ResponseEntity.ok().body(token);
         } catch (Exception e) {
             // خطایی در هنگام ثبت‌نام رخ داده است
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());

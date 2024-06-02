@@ -24,7 +24,7 @@ public class SecurityController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody Users user) {
+    public ResponseEntity<?> registerUser(@RequestBody Users user) {
         return securityService.registerUser(user);
     }
 
