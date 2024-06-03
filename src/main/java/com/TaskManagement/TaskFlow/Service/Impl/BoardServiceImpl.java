@@ -33,13 +33,14 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public ResponseEntity<BoardVo> createBoard(String token, BoardDto boardDTO) {
+    public ResponseEntity<?> createBoard(String token, BoardDto boardDTO) {
         try {
             String extractedToken = tokenService.validateToken(token);
             String userEmail = tokenService.extractEmailFromToken(extractedToken);
             Users user = userService.findUserByEmail(userEmail);
             if (boardRepository.existsByBoardNameAndUser(boardDTO.getBoardName(), user)) {
-                throw new Exception("A board with the same name already exists for this user");
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body("A board with the same name already exists for this user");
             }
 
             // Map DTO to Entity

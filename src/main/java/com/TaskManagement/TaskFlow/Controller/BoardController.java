@@ -26,10 +26,10 @@ public class BoardController {
     }
 
     @PostMapping()
-    public ResponseEntity<BoardVo> createBoard(@RequestBody BoardDto boardDTO, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> createBoard(@RequestBody BoardDto boardDTO, @RequestHeader("Authorization") String token) {
         try{
         // Extract user ID from token and pass it to service
-        ResponseEntity<BoardVo> response = boardService.createBoard(token ,boardDTO);
+        ResponseEntity<?> response = boardService.createBoard(token ,boardDTO);
         return response;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

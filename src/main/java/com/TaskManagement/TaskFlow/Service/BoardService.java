@@ -10,7 +10,7 @@ import com.TaskManagement.TaskFlow.Vo.BoardVo;
 
 
 public interface BoardService {
-    ResponseEntity<BoardVo> createBoard(String token ,BoardDto boardDTO);
+    ResponseEntity<?> createBoard(String token ,BoardDto boardDTO);
     Boards findBoardsById(Long id);
     List<BoardVo> getUserBoards(String token);
 }
