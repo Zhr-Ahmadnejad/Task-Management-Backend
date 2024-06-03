@@ -9,5 +9,5 @@ import com.TaskManagement.TaskFlow.Model.Users;
 public interface UserRepository extends JpaRepository<Users, Long> {
     Optional<Users> findByEmail(String email);
     Optional<Users> findById(Long id);
-    Long  findIdByEmail(String email);
+    Users findUserByEmail(String email);
 }

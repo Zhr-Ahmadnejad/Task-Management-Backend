@@ -1,5 +1,8 @@
 package com.TaskManagement.TaskFlow.Service.Impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jboss.resteasy.core.ExceptionAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,43 +35,45 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public ResponseEntity<BoardVo> createBoard(String token, BoardDto boardDTO) {
         try {
-            String[] parts = token.split("\\s+");
-            if (parts.length == 2 && parts[0].equalsIgnoreCase("Bearer")) {
-                String extractedToken = parts[1];
-    
-                if (tokenService.validateToken(extractedToken)) {
-                    // Extract email from token
-                    String userEmail = tokenService.extractEmailFromToken(extractedToken);
-                    Users user = userService.findUserByEmail(userEmail);
-    
-                    // Check if a board with the same name already exists for the user
-                    if (boardRepository.existsByBoardNameAndUser(boardDTO.getBoardName(), user)) {
-                        throw new Exception("A board with the same name already exists for this user");
-                    }
-    
-                    // Map DTO to Entity
-                    Boards board = new Boards();
-                    board.setBoardName(boardDTO.getBoardName());
-                    board.setUser(user);
-                    // Save to database
-                    Boards savedBoard = boardRepository.save(board);
-    
-                    // Map Entity to VO and return
-                    BoardVo boardVo = mapEntityToVO(savedBoard);
-                    return new ResponseEntity<>(boardVo, HttpStatus.CREATED);
-    
-                } else {
-                    throw new ExceptionAdapter(extractedToken, null);
-                }
-            } else {
-                throw new Exception("Invalid token format");
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            if (boardRepository.existsByBoardNameAndUser(boardDTO.getBoardName(), user)) {
+                throw new Exception("A board with the same name already exists for this user");
             }
+
+            // Map DTO to Entity
+            Boards board = new Boards();
+            board.setBoardName(boardDTO.getBoardName());
+            board.setUser(user);
+            // Save to database
+            Boards savedBoard = boardRepository.save(board);
+
+            // Map Entity to VO and return
+            BoardVo boardVo = mapEntityToVO(savedBoard);
+            return new ResponseEntity<>(boardVo, HttpStatus.CREATED);
+
         } catch (Exception e) {
-            // مدیریت استثناء و یا ارسال آن به بالا
             throw new RuntimeException("An error occurred while updating user", e);
         }
     }
-    
+
+    @Override
+    public List<BoardVo> getUserBoards(String token) {
+        try {
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Long userId = userService.findIdByEmail(userEmail);
+            List<Boards> boards = boardRepository.findByUserId(userId);
+            List<BoardVo> boardVos = new ArrayList<>();
+            for (Boards board : boards) {
+                boardVos.add(mapEntityToVO(board));
+            }
+            return boardVos;
+        } catch (Exception e) {
+            throw new RuntimeException("An error occurred while updating user", e);
+        }
+    }
 
     private BoardVo mapEntityToVO(Boards board) {
         BoardVo boardVO = new BoardVo();
@@ -78,8 +83,8 @@ public class BoardServiceImpl implements BoardService {
         return boardVO;
     }
 
-    public Boards findBoardsById(Long id){
+    public Boards findBoardsById(Long id) {
         return boardRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }

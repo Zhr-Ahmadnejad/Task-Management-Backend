@@ -25,6 +25,9 @@ public class SubTasks {
     @Column
     private String title;
 
+    @Column(columnDefinition = "boolean default true")
+    private boolean isActive;
+
     @ManyToOne
     @JoinColumn(name = "task_id")
     private Tasks task;

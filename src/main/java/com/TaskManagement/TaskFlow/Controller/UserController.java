@@ -63,8 +63,8 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/user")
-    public ResponseEntity<UserResponse> getUserInfo(HttpServletRequest request) {
-        return userService.getUserInfo(request);
-    }
+    // @GetMapping("/user")
+    // public ResponseEntity<UserResponse> getUserInfo(HttpServletRequest request) {
+    //     return userService.getUserInfo(request);
+    // }
 }

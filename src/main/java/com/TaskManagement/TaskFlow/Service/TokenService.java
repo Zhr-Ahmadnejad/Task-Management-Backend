@@ -40,17 +40,19 @@ public class TokenService {
                 .compact(); // Compact the token
     }
 
-    public boolean validateToken(String token) {
+    public String validateToken(String token) throws Exception {
         try {
+            String[] parts = token.split("\\s+");
             JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(secretKey).build();
-            Claims claims = jwtParser.parseClaimsJws(token).getBody();
-    
-            // Additional checks (if needed):
-            // - Verify user existence based on claims (e.g., email).
-            // - Check other custom claims (if any).
-    
-            return true;
-        } catch (ExpiredJwtException e) {
+            if (parts.length == 2 && parts[0].equalsIgnoreCase("Bearer")) {
+                String extractedToken = parts[1];
+                Claims claims = jwtParser.parseClaimsJws(extractedToken).getBody();
+                return extractedToken;}
+                else{
+                    throw new Exception("Invalid token format");
+                }
+            }
+            catch (ExpiredJwtException e) {
             // Handle expired token
             throw new ExpiredTokenException("The token has expired. Please log in again.");
         } catch (SignatureException e) {
@@ -61,10 +63,11 @@ public class TokenService {
             throw new TokenValidationException("Token validation failed. Please try again later.");
         }
     }
+
     
     public String extractEmailFromToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
         return claims.getSubject();
     }
-
 }
+

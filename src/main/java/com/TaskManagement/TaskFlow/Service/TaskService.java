@@ -43,28 +43,16 @@ public class TaskService {
 
     public Tasks createTask(String token, TaskDto taskDtO) throws NameNotFoundException {
         try {
-            String[] parts = token.split("\\s+");
-            if (parts.length == 2 && parts[0].equalsIgnoreCase("Bearer")) {
-                String extractedToken = parts[1];
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            Tasks task = new Tasks();
+            task.setTaskName(taskDtO.getTaskName());
+            task.setDescription(taskDtO.getDescription());
+            // todo set board id and state id and subtasks id
+            task.setUser(user);
+            return taskRepository.save(task);
 
-                if (tokenService.validateToken(extractedToken)) {
-                    // Extract email from token
-                    String userEmail = tokenService.extractEmailFromToken(extractedToken);
-                    Users user = userRepository.findByEmail(userEmail)
-                            .orElseThrow(() -> new RuntimeException("User not found"));
-                    Tasks task = new Tasks();
-                    task.setTaskName(taskDtO.getTaskName());
-                    task.setDescription(taskDtO.getDescription());
-                    //todo set board id and state id and subtasks id
-                    task.setUser(user);
-                    return taskRepository.save(task);
-
-                } else {
-                    throw new ExceptionAdapter(extractedToken, null);
-                }
-            } else {
-                throw new Exception("Invalid token format");
-            }
         } catch (Exception e) {
             // مدیریت استثناء و یا ارسال آن به بالا
             throw new RuntimeException("An error occurred while updating user", e);
