@@ -54,7 +54,6 @@ public class TaskService {
             return taskRepository.save(task);
 
         } catch (Exception e) {
-            // مدیریت استثناء و یا ارسال آن به بالا
             throw new RuntimeException("An error occurred while updating user", e);
         }
     }

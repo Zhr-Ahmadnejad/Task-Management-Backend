@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.TaskManagement.TaskFlow.Dto.BoardDto;
+import com.TaskManagement.TaskFlow.Exception.ExpiredTokenException;
+import com.TaskManagement.TaskFlow.Exception.InvalidTokenException;
+import com.TaskManagement.TaskFlow.Exception.TokenValidationException;
 import com.TaskManagement.TaskFlow.Model.Boards;
 import com.TaskManagement.TaskFlow.Model.Users;
 import com.TaskManagement.TaskFlow.Repository.BoardRepository;
@@ -40,7 +43,7 @@ public class BoardServiceImpl implements BoardService {
             Users user = userService.findUserByEmail(userEmail);
             if (boardRepository.existsByBoardNameAndUser(boardDTO.getBoardName(), user)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body("A board with the same name already exists for this user");
+                        .body("A board with the same name already exists for this user");
             }
 
             // Map DTO to Entity
@@ -55,7 +58,15 @@ public class BoardServiceImpl implements BoardService {
             return new ResponseEntity<>(boardVo, HttpStatus.CREATED);
 
         } catch (Exception e) {
-            throw new RuntimeException("An error occurred while updating user", e);
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while updating user", e);
+            }
         }
     }
 

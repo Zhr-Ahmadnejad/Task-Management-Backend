@@ -54,13 +54,13 @@ public class TokenService {
             }
             catch (ExpiredJwtException e) {
             // Handle expired token
-            throw new ExpiredTokenException("The token has expired. Please log in again.");
+            throw new ExpiredTokenException("The token has expired. Please log in again. " );
         } catch (SignatureException e) {
             // Handle invalid signature
-            throw new InvalidTokenException("The token signature is invalid.");
+            throw new InvalidTokenException("The token signature is invalid. " );
         } catch (JwtException e) {
             // Log other exceptions for debugging
-            throw new TokenValidationException("Token validation failed. Please try again later.");
+            throw new TokenValidationException("Token validation failed. Please try again later. ");
         }
     }
 
