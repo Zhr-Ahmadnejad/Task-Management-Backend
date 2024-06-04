@@ -3,7 +3,6 @@ package com.TaskManagement.TaskFlow.Service.Impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jboss.resteasy.core.ExceptionAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -71,19 +70,59 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public List<BoardVo> getUserBoards(String token) {
+    public ResponseEntity<?> updateBoardName(Long boardId, BoardDto boardDTO, String token) {
+        try {
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            Boards board = findBoardsById(boardId);
+            if (board.getUser() != user) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("The board with this ID is not found for this user.");
+            } else if (boardRepository.existsByBoardNameAndUser(boardDTO.getBoardName(), user)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("A board with the same name already exists for this user");
+            } else {
+                board.setBoardName(boardDTO.getBoardName());
+                Boards savedBoard = boardRepository.save(board);
+                BoardVo boardVo = mapEntityToVO(savedBoard);
+                return new ResponseEntity<>(boardVo, HttpStatus.CREATED);
+            }
+        } catch (Exception e) {
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while updating board", e);
+            }
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getUserBoards(String token) {
         try {
             String extractedToken = tokenService.validateToken(token);
             String userEmail = tokenService.extractEmailFromToken(extractedToken);
             Long userId = userService.findIdByEmail(userEmail);
             List<Boards> boards = boardRepository.findByUserId(userId);
-            List<BoardVo> boardVos = new ArrayList<>();
+            List<BoardVo> boardVo = new ArrayList<>();
             for (Boards board : boards) {
-                boardVos.add(mapEntityToVO(board));
+                boardVo.add(mapEntityToVO(board));
             }
-            return boardVos;
+            return new ResponseEntity<>(boardVo, HttpStatus.CREATED);
         } catch (Exception e) {
-            throw new RuntimeException("An error occurred while updating user", e);
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while updating user", e);
+            }
         }
     }
 

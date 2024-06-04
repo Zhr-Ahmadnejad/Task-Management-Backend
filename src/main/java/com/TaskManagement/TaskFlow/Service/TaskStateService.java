@@ -8,5 +8,5 @@ import com.TaskManagement.TaskFlow.Dto.TaskStateDto;
 import com.TaskManagement.TaskFlow.Vo.TaskStateVo;
 
 public interface TaskStateService {
-    ResponseEntity<List<TaskStateVo>> createTaskState(String token,TaskStateDto taskStateDTO);
+    ResponseEntity<?> createTaskState(String token,TaskStateDto taskStateDTO);
 }

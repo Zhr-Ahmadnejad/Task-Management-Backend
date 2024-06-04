@@ -38,12 +38,24 @@ public class BoardController {
     }
 
     @GetMapping
-    public ResponseEntity<List<BoardVo>> getUserBoards(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> getUserBoards(@RequestHeader("Authorization") String token) {
         try {
-            List<BoardVo> response = boardService.getUserBoards(token);
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            ResponseEntity<?> response = boardService.getUserBoards(token);
+            return response;
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @PutMapping("/{boardId}")
+    public ResponseEntity<?> updateBoardName(@RequestHeader("Authorization") String token ,@PathVariable Long boardId, @RequestBody BoardDto boardDTO) {
+        try{
+            ResponseEntity<?> response = boardService.updateBoardName(boardId, boardDTO, token);
+            return response;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+
+    }
+
 }

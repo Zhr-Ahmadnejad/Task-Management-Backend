@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.TaskManagement.TaskFlow.Dto.TaskStateDto;
+import com.TaskManagement.TaskFlow.Exception.ExpiredTokenException;
+import com.TaskManagement.TaskFlow.Exception.InvalidTokenException;
+import com.TaskManagement.TaskFlow.Exception.TokenValidationException;
 import com.TaskManagement.TaskFlow.Model.Boards;
 import com.TaskManagement.TaskFlow.Model.TaskStates;
 import com.TaskManagement.TaskFlow.Model.Users;
@@ -38,7 +41,7 @@ public class TaskStateServiceImpl implements TaskStateService {
     }
 
     @Override
-    public ResponseEntity<List<TaskStateVo>> createTaskState(String token, TaskStateDto taskStateDTO) {
+    public ResponseEntity<?> createTaskState(String token, TaskStateDto taskStateDTO) {
         try {
             String extractedToken = tokenService.validateToken(token);
             // Extract email from token
@@ -60,8 +63,15 @@ public class TaskStateServiceImpl implements TaskStateService {
             List<TaskStateVo> taskStateVOs = mapEntitiesToVOs(savedTaskStates);
             return new ResponseEntity<>(taskStateVOs, HttpStatus.CREATED);
         } catch (Exception e) {
-            // مدیریت استثناء و یا ارسال آن به بالا
-            throw new RuntimeException("An error occurred while updating user", e);
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while updating user", e);
+            }
         }
     }
 
