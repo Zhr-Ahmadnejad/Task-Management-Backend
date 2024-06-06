@@ -10,7 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.TaskManagement.TaskFlow.Dto.TaskStateDto;
+import com.TaskManagement.TaskFlow.Dto.TaskStatesDto;
 import com.TaskManagement.TaskFlow.Service.TaskStateService;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
 
 @RestController
 @RequestMapping("/api/user/TaskState")
@@ -25,13 +29,24 @@ public class TaskStateController {
 
     @PostMapping
     public ResponseEntity<?> createState(@RequestHeader("Authorization") String token,
-            @RequestBody TaskStateDto taskStateDto) {
+            @RequestBody TaskStatesDto taskStateDto) {
         try {
             ResponseEntity<?> response = taskStateService.createTaskState(token , taskStateDto);
             return response;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+
+    @PutMapping("/{taskStateId}")
+    public ResponseEntity<?> putMethodName(@RequestHeader("Authorization") String token ,@PathVariable Long taskStateId, @RequestBody TaskStateDto taskStateDto) {
+        try{
+            ResponseEntity<?> response = taskStateService.updateTaskState(token , taskStateDto , taskStateId);
+            return response;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+
     }
 
 }

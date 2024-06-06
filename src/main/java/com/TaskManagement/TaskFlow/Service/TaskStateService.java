@@ -1,12 +1,12 @@
 package com.TaskManagement.TaskFlow.Service;
 
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 
 import com.TaskManagement.TaskFlow.Dto.TaskStateDto;
-import com.TaskManagement.TaskFlow.Vo.TaskStateVo;
+import com.TaskManagement.TaskFlow.Dto.TaskStatesDto;
 
 public interface TaskStateService {
-    ResponseEntity<?> createTaskState(String token,TaskStateDto taskStateDTO);
+    ResponseEntity<?> createTaskState(String token,TaskStatesDto taskStateDTO);
+
+    ResponseEntity<?> updateTaskState(String token, TaskStateDto taskStateDto, Long taskStateId);
 }

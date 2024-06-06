@@ -3,13 +3,14 @@ package com.TaskManagement.TaskFlow.Service.Impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jboss.resteasy.core.ExceptionAdapter;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.TaskManagement.TaskFlow.Dto.TaskStateDto;
+import com.TaskManagement.TaskFlow.Dto.TaskStatesDto;
 import com.TaskManagement.TaskFlow.Exception.ExpiredTokenException;
 import com.TaskManagement.TaskFlow.Exception.InvalidTokenException;
 import com.TaskManagement.TaskFlow.Exception.TokenValidationException;
@@ -41,7 +42,7 @@ public class TaskStateServiceImpl implements TaskStateService {
     }
 
     @Override
-    public ResponseEntity<?> createTaskState(String token, TaskStateDto taskStateDTO) {
+    public ResponseEntity<?> createTaskState(String token, TaskStatesDto taskStateDTO) {
         try {
             String extractedToken = tokenService.validateToken(token);
             // Extract email from token
@@ -50,7 +51,7 @@ public class TaskStateServiceImpl implements TaskStateService {
             Boards board = new Boards();
             board = boardService.findBoardsById(taskStateDTO.getBoardId());
             List<TaskStates> savedTaskStates = new ArrayList<>();
-            for (String taskName : taskStateDTO.getStateName()) { // تغییر اینجا
+            for (String taskName : taskStateDTO.getStatesName()) { // تغییر اینجا
                 TaskStates taskState = new TaskStates();
                 taskState.setStateName(taskName);
                 taskState.setBoard(board); // تغییر اینجا
@@ -75,6 +76,44 @@ public class TaskStateServiceImpl implements TaskStateService {
         }
     }
 
+    @Override
+    public ResponseEntity<?> updateTaskState(String token, TaskStateDto taskStateDto, Long taskStateId) {
+        try {
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            Boards board = boardService.findBoardsById(taskStateDto.getBoardId());
+            TaskStates taskState = findTaskStateById(taskStateId);
+            if (taskState.getUser() != user) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("The taskState with this ID is not found for this user.");
+            } else if (taskState.getBoard() != board) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("The task state with this ID is not found for this board.");
+            } else {
+                taskState.setStateName(taskStateDto.getStateName());
+                TaskStates saveTaskStates = taskStateRepository.save(taskState);
+                TaskStateVo taskStateVo = mapEntitieToVo(saveTaskStates);
+                return new ResponseEntity<>(taskStateVo, HttpStatus.CREATED);
+            }
+        } catch (Exception e) {
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while updating task state", e);
+            }
+        }
+    }
+
+    public TaskStates findTaskStateById(Long id) {
+        return taskStateRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
     private List<TaskStateVo> mapEntitiesToVOs(List<TaskStates> taskStates) {
         List<TaskStateVo> taskStateVOs = new ArrayList<>();
         for (TaskStates taskState : taskStates) {
@@ -85,6 +124,15 @@ public class TaskStateServiceImpl implements TaskStateService {
             taskStateVOs.add(taskStateVO);
         }
         return taskStateVOs;
+    }
+
+    private TaskStateVo mapEntitieToVo(TaskStates taskState){
+        TaskStateVo taskStateVO = new TaskStateVo();
+        taskStateVO.setId(taskState.getId());
+        taskStateVO.setStateName(taskState.getStateName());
+        taskStateVO.setBoardId(taskState.getBoard().getId());
+        return taskStateVO;
+
     }
 
 }
