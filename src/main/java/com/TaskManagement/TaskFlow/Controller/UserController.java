@@ -1,8 +1,8 @@
 package com.TaskManagement.TaskFlow.Controller;
 
 import com.TaskManagement.TaskFlow.Model.Users;
-import com.TaskManagement.TaskFlow.Response.UserResponse;
 import com.TaskManagement.TaskFlow.Service.UserService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.naming.NameNotFoundException;
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 @RestController

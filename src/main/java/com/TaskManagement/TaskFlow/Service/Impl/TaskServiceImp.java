@@ -23,35 +23,57 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import javax.naming.NameNotFoundException;
 
 @Service
 public class TaskServiceImp implements TaskService {
 
     private final TaskRepository taskRepository;
     private final TokenService tokenService;
-    private final UserRepository userRepository;
     private final UserService userService;
     private final BoardService boardService;
     private final TaskStateService taskStateService;
 
 
     @Autowired
-    public TaskServiceImp(TaskRepository taskRepository, TokenService tokenService, UserRepository userRepository,
+    public TaskServiceImp(TaskRepository taskRepository, TokenService tokenService,
             UserService userService, BoardService boardService, TaskStateService taskStateService) {
         this.taskRepository = taskRepository;
         this.tokenService = tokenService;
-        this.userRepository = userRepository;
         this.userService = userService;
         this.boardService = boardService;
         this.taskStateService = taskStateService;
     }
 
-    public List<Tasks> getAllTasks() {
-        return taskRepository.findAll();
+    public ResponseEntity<?> getAllTasks(String token , TaskDto taskDto) {
+        try{
+            String extractedToken = tokenService.validateToken(token);
+            // Extract email from token
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            Boards board = new Boards();
+            board = boardService.findBoardsById(taskDto.getBoardId());
+            TaskStates taskState = new TaskStates();
+            taskState = taskStateService.findTaskStateById(taskDto.getStateId());
+            List<Tasks> tasks = new ArrayList<>();
+            tasks = taskRepository.findByBoardAndUserAndState(board, user, taskState);
+            List<TaskVo> taskVos = mapEntitiesToVos(tasks);
+            return new ResponseEntity<>(taskVos, HttpStatus.OK);
+
+        } catch (Exception e) {
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while updating user", e);
+            }
+        }
     }
 
     public Optional<Tasks> getTaskById(Long taskId) {
@@ -119,6 +141,20 @@ public class TaskServiceImp implements TaskService {
         taskVo.setStateId(task.getState().getId());
         taskVo.setBoardId(task.getBoard().getId());
         return taskVo;
+
+    }
+    private List<TaskVo> mapEntitiesToVos(List<Tasks> tasks){
+        List<TaskVo> taskVos = new ArrayList<>();
+        for (Tasks task : tasks ){
+            TaskVo taskVo = new TaskVo();
+            taskVo.setId(task.getId());
+            taskVo.setTaskName(task.getTaskName());
+            taskVo.setDescription(task.getDescription());
+            taskVo.setStateId(task.getState().getId());
+            taskVo.setBoardId(task.getBoard().getId());
+            taskVos.add(taskVo);
+        }
+        return taskVos;
 
     }
 

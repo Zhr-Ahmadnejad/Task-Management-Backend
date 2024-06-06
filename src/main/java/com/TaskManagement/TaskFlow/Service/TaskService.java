@@ -13,8 +13,6 @@ import com.TaskManagement.TaskFlow.Model.Tasks;
 
 public interface TaskService {
 
-    List<Tasks> getAllTasks();
-
     Optional<Tasks> getTaskById(Long taskId);
 
     ResponseEntity<?> createTask(String token, @Valid TaskDto taskDTO);
@@ -24,5 +22,7 @@ public interface TaskService {
     void deleteTask(Long taskId);
 
     Tasks addSubTaskToTask(Long taskId, SubTasks subTask);
+
+    ResponseEntity<?> getAllTasks(String token, TaskDto taskDTO);
 
 }

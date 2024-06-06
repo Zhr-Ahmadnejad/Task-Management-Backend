@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.TaskManagement.TaskFlow.Dto.TaskStateDto;
-import com.TaskManagement.TaskFlow.Dto.TaskStatesDto;
 import com.TaskManagement.TaskFlow.Exception.ExpiredTokenException;
 import com.TaskManagement.TaskFlow.Exception.InvalidTokenException;
 import com.TaskManagement.TaskFlow.Exception.TokenValidationException;
@@ -42,7 +41,7 @@ public class TaskStateServiceImpl implements TaskStateService {
     }
 
     @Override
-    public ResponseEntity<?> createTaskState(String token, TaskStatesDto taskStateDTO) {
+    public ResponseEntity<?> createTaskState(String token, TaskStateDto taskStateDTO) {
         try {
             String extractedToken = tokenService.validateToken(token);
             // Extract email from token

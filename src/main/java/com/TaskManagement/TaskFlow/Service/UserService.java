@@ -1,101 +1,27 @@
 package com.TaskManagement.TaskFlow.Service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-
-import com.TaskManagement.TaskFlow.Model.Users;
-import com.TaskManagement.TaskFlow.Repository.UserRepository;
-
-import javax.naming.NameNotFoundException;
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
 
-@Service
-public class UserService {
+import javax.naming.NameNotFoundException;
+import javax.validation.Valid;
 
-    private final UserRepository userRepository;
-    private final TokenService tokenService;
+import com.TaskManagement.TaskFlow.Model.Users;
 
-    @Autowired
-    public UserService(UserRepository userRepository, SecurityService securityService, TokenService tokenService) {
-        this.userRepository = userRepository;
-        this.tokenService = tokenService;
-    }
+public interface UserService {
 
-    public List<Users> getAllUsers() {
-        return userRepository.findAll();
-    }
+    Users findUserByEmail(String userEmail);
 
-    public Optional<Users> getUserById(Long userId) {
-        return userRepository.findById(userId);
-    }
+    Long findIdByEmail(String userEmail);
 
-    public Users createUser(Users user) {
-        return userRepository.save(user);
-    }
+    List<Users> getAllUsers();
 
-    public Users updateUser(String token, Users newUser) throws NameNotFoundException {
-        try {
-            String extractedToken = tokenService.validateToken(token);
-            String userEmail = tokenService.extractEmailFromToken(extractedToken);
-            Users user = findUserByEmail(userEmail);
-            user.setFirstName(newUser.getFirstName());
-            user.setLastName(newUser.getLastName());
-            user.setEmail(newUser.getEmail());
-            user.setPassword(newUser.getPassword());
-            return userRepository.save(user);
-        } catch (Exception e) {
-            // مدیریت استثناء و یا ارسال آن به بالا
-            throw new RuntimeException("An error occurred while updating user", e);
-        }
-    }
+    Optional<Users> getUserById(Long userId);
 
-    // public ResponseEntity<UserResponse> getUserInfo(HttpServletRequest request) {
-    // String token = extractTokenFromRequest(request);
-    // if (StringUtils.hasText(token) && tokenService.validateToken(token)) {
-    // String email = tokenService.extractEmailFromToken(token);
-    // Optional<Users> optionalUser = userRepository.findByEmail(email);
-    // if (optionalUser.isPresent()) {
-    // Users user = optionalUser.get();
-    // UserResponse userResponse = new UserResponse(user.getEmail(),
-    // user.getFirstName(), user.getLastName(), user.getPassword());
-    // return ResponseEntity.ok(userResponse);
-    // } else {
-    // return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new
-    // UserResponse("User not found"));
-    // }
-    // } else {
-    // return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new
-    // UserResponse("Unauthorized"));
-    // }
-    // }
+    Users createUser(Users user);
 
-    private String extractTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
-    }
+    Users updateUser(String token, @Valid Users newUser) throws NameNotFoundException;
 
-    public void deleteUser(Long userId) {
-        userRepository.deleteById(userId);
-    }
+    void deleteUser(Long userId);
 
-    public Long findIdByEmail(String email) {
-        Users user = userRepository.findUserByEmail(email);
-        if (user == null) {
-            throw new RuntimeException("User not found");
-        }
-        return user.getId();
-    }
-    
-
-    public Users findUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-    }
 }

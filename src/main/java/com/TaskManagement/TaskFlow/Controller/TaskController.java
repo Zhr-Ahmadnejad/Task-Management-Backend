@@ -7,14 +7,9 @@ import com.TaskManagement.TaskFlow.Service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
-
-import javax.naming.NameNotFoundException;
-import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/user/board/tasks")
@@ -28,9 +23,14 @@ public class TaskController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Tasks>> getAllTasks() {
-        List<Tasks> tasks = taskService.getAllTasks();
-        return new ResponseEntity<>(tasks, HttpStatus.OK);
+    public ResponseEntity<?> getAllTasks(@RequestHeader("Authorization") String token , @RequestBody TaskDto taskDTO) {
+        try{
+            ResponseEntity<?> response = taskService.getAllTasks(token , taskDTO);
+            return response;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+        
     }
 
     @GetMapping("/{taskId}")
@@ -41,9 +41,9 @@ public class TaskController {
     }
 
     @PostMapping()
-    public ResponseEntity<?> createTask(@RequestHeader("Authorization") String token, @RequestBody TaskDto taskDTO){
+    public ResponseEntity<?> createTask(@RequestHeader("Authorization") String token, @RequestBody TaskDto taskDTO) {
         try {
-            ResponseEntity<?> response = taskService.createTask(token , taskDTO);
+            ResponseEntity<?> response = taskService.createTask(token, taskDTO);
             return response;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

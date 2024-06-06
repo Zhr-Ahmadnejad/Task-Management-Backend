@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.TaskManagement.TaskFlow.Dto.TaskStateDto;
-import com.TaskManagement.TaskFlow.Dto.TaskStatesDto;
 import com.TaskManagement.TaskFlow.Service.TaskStateService;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +28,7 @@ public class TaskStateController {
 
     @PostMapping
     public ResponseEntity<?> createState(@RequestHeader("Authorization") String token,
-            @RequestBody TaskStatesDto taskStateDto) {
+            @RequestBody TaskStateDto taskStateDto) {
         try {
             ResponseEntity<?> response = taskStateService.createTaskState(token , taskStateDto);
             return response;
