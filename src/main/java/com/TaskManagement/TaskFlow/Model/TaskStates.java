@@ -20,7 +20,7 @@ public class TaskStates {
     @Column
     private String stateName;
 
-    @OneToMany(mappedBy = "states", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "state", cascade = CascadeType.ALL)
     private Set<Tasks> tasks;
 
     @ManyToOne

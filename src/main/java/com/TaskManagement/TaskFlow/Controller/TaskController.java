@@ -41,12 +41,13 @@ public class TaskController {
     }
 
     @PostMapping()
-    public ResponseEntity<String> createTask(@RequestHeader(value = "token") String token, @Valid @RequestBody TaskDto taskDTO, BindingResult bindingResult) throws NameNotFoundException {
-        if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(bindingResult.getFieldError().getDefaultMessage(), HttpStatus.BAD_REQUEST);
+    public ResponseEntity<?> createTask(@RequestHeader("Authorization") String token, @RequestBody TaskDto taskDTO){
+        try {
+            ResponseEntity<?> response = taskService.createTask(token , taskDTO);
+            return response;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-        taskService.createTask(token , taskDTO );
-        return new ResponseEntity<>("Task saved successfully", HttpStatus.CREATED);
     }
 
     @PutMapping("/{taskId}")

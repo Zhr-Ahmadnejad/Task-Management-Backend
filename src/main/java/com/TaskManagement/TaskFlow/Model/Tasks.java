@@ -4,7 +4,6 @@ import java.util.Set;
 
 import javax.persistence.*;
 
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -30,7 +29,7 @@ public class Tasks {
 
     @ManyToOne
     @JoinColumn(name = "state_id")
-    private TaskStates states;
+    private TaskStates state;
 
     @ManyToOne
     @JoinColumn(name = "board_id")
