@@ -10,7 +10,6 @@ import com.TaskManagement.TaskFlow.Model.TaskStates;
 import com.TaskManagement.TaskFlow.Model.Tasks;
 import com.TaskManagement.TaskFlow.Model.Users;
 import com.TaskManagement.TaskFlow.Repository.TaskRepository;
-import com.TaskManagement.TaskFlow.Repository.UserRepository;
 import com.TaskManagement.TaskFlow.Service.BoardService;
 import com.TaskManagement.TaskFlow.Service.TaskService;
 import com.TaskManagement.TaskFlow.Service.TaskStateService;
@@ -134,12 +133,7 @@ public class TaskServiceImp implements TaskService {
     }
 
     private TaskVo mapEntitieToVo(Tasks task){
-        TaskVo taskVo = new TaskVo();
-        taskVo.setId(task.getId());
-        taskVo.setTaskName(task.getTaskName());
-        taskVo.setDescription(task.getDescription());
-        taskVo.setStateId(task.getState().getId());
-        taskVo.setBoardId(task.getBoard().getId());
+        TaskVo taskVo = new TaskVo(task.getId() , task.getTaskName() , task.getDescription() , task.getState().getId() , task.getBoard().getId());
         return taskVo;
 
     }

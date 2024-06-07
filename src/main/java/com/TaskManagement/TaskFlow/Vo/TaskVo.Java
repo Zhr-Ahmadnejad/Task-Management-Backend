@@ -12,8 +12,7 @@ public class TaskVo {
     private Long stateId;
     private Long boardId;
 
-
-    public TaskVo(Long id , String taskName , String description , Long stateId , Long boardId){
+    public TaskVo(Long id, String taskName, String description, Long stateId, Long boardId) {
         this.id = id;
         this.taskName = taskName;
         this.description = description;
@@ -22,10 +21,6 @@ public class TaskVo {
 
     }
 
-
     public TaskVo() {
     }
-
-
-
 }
