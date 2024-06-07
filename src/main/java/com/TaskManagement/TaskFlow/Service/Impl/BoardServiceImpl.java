@@ -13,12 +13,15 @@ import com.TaskManagement.TaskFlow.Exception.ExpiredTokenException;
 import com.TaskManagement.TaskFlow.Exception.InvalidTokenException;
 import com.TaskManagement.TaskFlow.Exception.TokenValidationException;
 import com.TaskManagement.TaskFlow.Model.Boards;
+import com.TaskManagement.TaskFlow.Model.TaskStates;
 import com.TaskManagement.TaskFlow.Model.Users;
 import com.TaskManagement.TaskFlow.Repository.BoardRepository;
+import com.TaskManagement.TaskFlow.Repository.TaskStateRepository;
 import com.TaskManagement.TaskFlow.Service.BoardService;
 import com.TaskManagement.TaskFlow.Service.TokenService;
 import com.TaskManagement.TaskFlow.Service.UserService;
 import com.TaskManagement.TaskFlow.Vo.BoardVo;
+import com.TaskManagement.TaskFlow.Vo.TaskStateVo;
 
 @Service
 public class BoardServiceImpl implements BoardService {
@@ -26,12 +29,15 @@ public class BoardServiceImpl implements BoardService {
     private final BoardRepository boardRepository;
     private final UserService userService;
     private final TokenService tokenService;
+    private final TaskStateRepository taskStateRepository;
 
     @Autowired
-    public BoardServiceImpl(BoardRepository boardRepository, UserService userService, TokenService tokenService) {
+    public BoardServiceImpl(BoardRepository boardRepository, UserService userService, TokenService tokenService,
+            TaskStateRepository taskStateRepository) {
         this.boardRepository = boardRepository;
         this.userService = userService;
         this.tokenService = tokenService;
+        this.taskStateRepository = taskStateRepository;
     }
 
     @Override
@@ -51,9 +57,17 @@ public class BoardServiceImpl implements BoardService {
             board.setUser(user);
             // Save to database
             Boards savedBoard = boardRepository.save(board);
-
+            List<TaskStates> saveTaskStates = new ArrayList<>();
+            for (String taskStateName : boardDTO.getTaskStates()) {
+                TaskStates taskState = new TaskStates();
+                taskState.setStateName(taskStateName);
+                taskState.setBoard(savedBoard);
+                taskState.setUser(user);
+                TaskStates savedTaskState = taskStateRepository.save(taskState);
+                saveTaskStates.add(savedTaskState);
+            }
             // Map Entity to VO and return
-            BoardVo boardVo = mapEntityToVO(savedBoard);
+            BoardVo boardVo = mapEntityToVO(savedBoard, saveTaskStates);
             return new ResponseEntity<>(boardVo, HttpStatus.CREATED);
 
         } catch (Exception e) {
@@ -106,11 +120,12 @@ public class BoardServiceImpl implements BoardService {
         try {
             String extractedToken = tokenService.validateToken(token);
             String userEmail = tokenService.extractEmailFromToken(extractedToken);
-            Long userId = userService.findIdByEmail(userEmail);
-            List<Boards> boards = boardRepository.findByUserId(userId);
+            Users user = userService.findUserByEmail(userEmail);
+            List<Boards> boards = boardRepository.findByUserId(user.getId());
             List<BoardVo> boardVo = new ArrayList<>();
             for (Boards board : boards) {
-                boardVo.add(mapEntityToVO(board));
+                List<TaskStates> taskStates = taskStateRepository.findByBoardAndUser(board,user);
+                boardVo.add(mapEntityToVO(board,taskStates));
             }
             return new ResponseEntity<>(boardVo, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -126,11 +141,26 @@ public class BoardServiceImpl implements BoardService {
         }
     }
 
+    private BoardVo mapEntityToVO(Boards board, List<TaskStates> taskStates) {
+        BoardVo boardVO = new BoardVo();
+        boardVO.setId(board.getId());
+        boardVO.setBoardName(board.getBoardName());
+        List<TaskStateVo> taskStateVOs = new ArrayList<>();
+        for (TaskStates taskState : taskStates) {
+            TaskStateVo taskStateVO = new TaskStateVo();
+            taskStateVO.setId(taskState.getId());
+            taskStateVO.setStateName(taskState.getStateName());
+            taskStateVO.setBoardId(taskState.getBoard().getId());
+            taskStateVOs.add(taskStateVO);
+        }
+        boardVO.setTaskStates(taskStateVOs);
+        return boardVO;
+    }
+
     private BoardVo mapEntityToVO(Boards board) {
         BoardVo boardVO = new BoardVo();
         boardVO.setId(board.getId());
         boardVO.setBoardName(board.getBoardName());
-        // Map other fields if needed
         return boardVO;
     }
 
