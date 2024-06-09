@@ -11,4 +11,12 @@ public class SubTaskVo {
     private String title;
     private boolean isActive;
     private Long taskId;
+
+    public SubTaskVo(Long id , String title , boolean isActive , Long taskId){
+        this.id = id;
+        this.title = title;
+        this.isActive = isActive;
+        this.taskId = taskId;
+    }
+    public SubTaskVo(){}
 }

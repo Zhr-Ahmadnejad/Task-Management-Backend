@@ -17,7 +17,6 @@ import com.TaskManagement.TaskFlow.Service.TaskStateService;
 import com.TaskManagement.TaskFlow.Service.TokenService;
 import com.TaskManagement.TaskFlow.Service.UserService;
 import com.TaskManagement.TaskFlow.Vo.SubTaskVo;
-import com.TaskManagement.TaskFlow.Vo.TaskStateVo;
 import com.TaskManagement.TaskFlow.Vo.TaskVo;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +52,7 @@ public class TaskServiceImp implements TaskService {
 
     }
 
+    @Override
     public ResponseEntity<?> getAllTasks(String token , TaskDto taskDto) {
         try{
             String extractedToken = tokenService.validateToken(token);
@@ -65,7 +65,11 @@ public class TaskServiceImp implements TaskService {
             taskState = taskStateService.findTaskStateById(taskDto.getTaskStateId());
             List<Tasks> tasks = new ArrayList<>();
             tasks = taskRepository.findByBoardAndUserAndState(board, user, taskState);
-            List<TaskVo> taskVos = mapEntitiesToVos(tasks);
+            List<TaskVo> taskVos = new ArrayList<>();
+            for(Tasks task: tasks){
+                List<SubTasks> subTasks = subTaskRepository.findByTask(task);
+                taskVos.add(mapEntitieToVo(task, subTasks));
+            }
             return new ResponseEntity<>(taskVos, HttpStatus.OK);
 
         } catch (Exception e) {
@@ -81,14 +85,15 @@ public class TaskServiceImp implements TaskService {
         }
     }
 
+    @Override
     public Optional<Tasks> getTaskById(Long taskId) {
         return taskRepository.findById(taskId);
     }
 
+    @Override
     public ResponseEntity<?> createTask(String token, TaskDto taskDtO) {
         try {
             String extractedToken = tokenService.validateToken(token);
-            // Extract email from token
             String userEmail = tokenService.extractEmailFromToken(extractedToken);
             Users user = userService.findUserByEmail(userEmail);
             Boards board = new Boards();
@@ -107,6 +112,7 @@ public class TaskServiceImp implements TaskService {
                 SubTasks subTasks = new SubTasks();
                 subTasks.setTitle(subtaskName);
                 subTasks.setTask(saveTask);
+                subTasks.setActive(true);
                 SubTasks saveSubTasks = subTaskRepository.save(subTasks);
                 savSubTasks.add(saveSubTasks);
             }
@@ -126,6 +132,7 @@ public class TaskServiceImp implements TaskService {
         }
     }
 
+    @Override
     public Tasks updateTask(Long taskId, Tasks newTask) {
         return taskRepository.findById(taskId).map(task -> {
             task.setTaskName(newTask.getTaskName());
@@ -137,12 +144,14 @@ public class TaskServiceImp implements TaskService {
         }).orElseThrow(() -> new RuntimeException("Task not found"));
     }
 
+    @Override
     public Tasks addSubTaskToTask(Long taskId, SubTasks subTask) {
         Tasks task = taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Task not found"));
         task.getSubTasks().add(subTask);
         return taskRepository.save(task);
     }
 
+    @Override
     public void deleteTask(Long taskId) {
         taskRepository.deleteById(taskId);
     }
@@ -155,10 +164,15 @@ public class TaskServiceImp implements TaskService {
         taskVo.setStateId(task.getState().getId());
         taskVo.setBoardId(task.getBoard().getId());
         List<SubTaskVo> subTaskVos = new ArrayList<>();
-        for (SubTasks subTaskVo : subTasks){
-            TaskStateVo taskStateVo = new TaskStateVo();
-            
+        for (SubTasks subTask : subTasks){
+            SubTaskVo subtaskVo = new SubTaskVo();
+            subtaskVo.setActive(subTask.isActive());
+            subtaskVo.setId(subTask.getId());
+            subtaskVo.setTaskId(subTask.getTask().getId());
+            subtaskVo.setTitle(subTask.getTitle());
+            subTaskVos.add(subtaskVo);
         }
+        taskVo.setSubTasks(subTaskVos);
 
         return taskVo;
 
