@@ -1,6 +1,5 @@
 package com.TaskManagement.TaskFlow.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 import javax.validation.Valid;
@@ -19,7 +18,7 @@ public interface TaskService {
 
     Tasks updateTask(Long taskId, Tasks task);
 
-    void deleteTask(Long taskId);
+    ResponseEntity<?> deleteTask(String token, Long taskId);
 
     Tasks addSubTaskToTask(Long taskId, SubTasks subTask);
 

@@ -6,6 +6,8 @@ import java.util.Optional;
 import javax.naming.NameNotFoundException;
 import javax.validation.Valid;
 
+import org.springframework.http.ResponseEntity;
+
 import com.TaskManagement.TaskFlow.Model.Users;
 
 public interface UserService {
@@ -22,6 +24,5 @@ public interface UserService {
 
     Users updateUser(String token, @Valid Users newUser) throws NameNotFoundException;
 
-    void deleteUser(Long userId);
-
+    ResponseEntity<?> deleteUser(String token, Long userId);
 }

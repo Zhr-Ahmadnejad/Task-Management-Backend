@@ -3,7 +3,6 @@ package com.TaskManagement.TaskFlow.Service.Impl;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +14,7 @@ import com.TaskManagement.TaskFlow.Exception.InvalidTokenException;
 import com.TaskManagement.TaskFlow.Exception.TokenValidationException;
 import com.TaskManagement.TaskFlow.Model.Boards;
 import com.TaskManagement.TaskFlow.Model.TaskStates;
+import com.TaskManagement.TaskFlow.Model.Tasks;
 import com.TaskManagement.TaskFlow.Model.Users;
 import com.TaskManagement.TaskFlow.Repository.TaskStateRepository;
 import com.TaskManagement.TaskFlow.Service.BoardService;
@@ -108,6 +108,34 @@ public class TaskStateServiceImpl implements TaskStateService {
         }
     }
 
+    @Override
+    public ResponseEntity<?> deleteTaskState(String token, Long taskStateId) {
+        try {
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            TaskStates taskState = taskStateRepository.findById(taskStateId).orElse(null);
+            if (taskState != null && taskState.getUser().equals(user)) {
+                taskStateRepository.delete(taskState);
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body("taskState deleted successfully");
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You are not authorized to delete this taskState or the taskState was not found");
+            }
+        } catch (Exception e) {
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while delete taskState", e);
+            }
+        }
+    }
+
     public TaskStates findTaskStateById(Long id) {
         return taskStateRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -125,7 +153,7 @@ public class TaskStateServiceImpl implements TaskStateService {
         return taskStateVOs;
     }
 
-    private TaskStateVo mapEntitieToVo(TaskStates taskState){
+    private TaskStateVo mapEntitieToVo(TaskStates taskState) {
         TaskStateVo taskStateVO = new TaskStateVo();
         taskStateVO.setId(taskState.getId());
         taskStateVO.setStateName(taskState.getStateName());
@@ -133,5 +161,4 @@ public class TaskStateServiceImpl implements TaskStateService {
         return taskStateVO;
 
     }
-
 }

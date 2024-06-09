@@ -7,9 +7,15 @@ import javax.naming.NameNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.TaskManagement.TaskFlow.Exception.ExpiredTokenException;
+import com.TaskManagement.TaskFlow.Exception.InvalidTokenException;
+import com.TaskManagement.TaskFlow.Exception.TokenValidationException;
+import com.TaskManagement.TaskFlow.Model.Boards;
 import com.TaskManagement.TaskFlow.Model.Users;
 import com.TaskManagement.TaskFlow.Repository.UserRepository;
 import com.TaskManagement.TaskFlow.Service.SecurityService;
@@ -85,8 +91,31 @@ public class UserServiceImp implements UserService{
         return null;
     }
 
-    public void deleteUser(Long userId) {
-        userRepository.deleteById(userId);
+    public ResponseEntity<?> deleteUser(String token, Long userId){
+        try {
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users tokenUser = findUserByEmail(userEmail);
+            Users user = userRepository.findById(userId).orElse(null);
+            if (user != null && tokenUser.equals(user)) {
+                userRepository.delete(user);
+                return ResponseEntity.status(HttpStatus.OK)
+                .body("user deleted successfully");
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("You are not authorized to delete this user or the user was not found");
+            }
+        } catch (Exception e) {
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while delete user", e);
+            }
+        }
     }
 
     public Long findIdByEmail(String email) {

@@ -152,8 +152,31 @@ public class TaskServiceImp implements TaskService {
     }
 
     @Override
-    public void deleteTask(Long taskId) {
-        taskRepository.deleteById(taskId);
+    public ResponseEntity<?> deleteTask(String token, Long taskId) {
+        try {
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            Tasks task = taskRepository.findById(taskId).orElse(null);
+            if (task != null && task.getUser().equals(user)) {
+                taskRepository.delete(task);
+                return ResponseEntity.status(HttpStatus.OK)
+                .body("Task deleted successfully");
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("You are not authorized to delete this task or the task was not found");
+            }
+        } catch (Exception e) {
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while updating user", e);
+            }
+        }
     }
 
     private TaskVo mapEntitieToVo(Tasks task , List<SubTasks> subTasks){
@@ -177,4 +200,5 @@ public class TaskServiceImp implements TaskService {
         return taskVo;
 
     }
+
 }

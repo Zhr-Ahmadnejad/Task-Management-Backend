@@ -32,7 +32,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<Users> getUserById(@PathVariable Long userId) {
+    public ResponseEntity<Users> getUserById(@RequestHeader("Authorization") String token,@PathVariable Long userId) {
         Optional<Users> user = userService.getUserById(userId);
         return user.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -56,14 +56,9 @@ public class UserController {
         }
     }
 
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
-        userService.deleteUser(userId);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@RequestHeader("Authorization") String token, @PathVariable Long id) {
+        return userService.deleteUser(token, id);
 
-    // @GetMapping("/user")
-    // public ResponseEntity<UserResponse> getUserInfo(HttpServletRequest request) {
-    //     return userService.getUserInfo(request);
-    // }
+    }
 }

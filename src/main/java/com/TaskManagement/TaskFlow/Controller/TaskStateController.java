@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.TaskManagement.TaskFlow.Dto.TaskStateDto;
 import com.TaskManagement.TaskFlow.Service.TaskStateService;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-
 
 @RestController
 @RequestMapping("/api/user/TaskState")
@@ -30,7 +30,7 @@ public class TaskStateController {
     public ResponseEntity<?> createState(@RequestHeader("Authorization") String token,
             @RequestBody TaskStateDto taskStateDto) {
         try {
-            ResponseEntity<?> response = taskStateService.createTaskState(token , taskStateDto);
+            ResponseEntity<?> response = taskStateService.createTaskState(token, taskStateDto);
             return response;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -38,13 +38,20 @@ public class TaskStateController {
     }
 
     @PutMapping("/{taskStateId}")
-    public ResponseEntity<?> putMethodName(@RequestHeader("Authorization") String token ,@PathVariable Long taskStateId, @RequestBody TaskStateDto taskStateDto) {
-        try{
-            ResponseEntity<?> response = taskStateService.updateTaskState(token , taskStateDto , taskStateId);
+    public ResponseEntity<?> putMethodName(@RequestHeader("Authorization") String token, @PathVariable Long taskStateId,
+            @RequestBody TaskStateDto taskStateDto) {
+        try {
+            ResponseEntity<?> response = taskStateService.updateTaskState(token, taskStateDto, taskStateId);
             return response;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
+
+    }
+
+    @DeleteMapping("/{taskStateId}")
+    public ResponseEntity<?> deleteTaskState(@RequestHeader("Authorization") String token, @PathVariable Long taskStateId) {
+        return taskStateService.deleteTaskState(token, taskStateId);
 
     }
 

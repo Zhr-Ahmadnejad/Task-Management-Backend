@@ -56,15 +56,15 @@ public class TaskController {
         return new ResponseEntity<>(updatedTask, HttpStatus.OK);
     }
 
-    @DeleteMapping("/{taskId}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId) {
-        taskService.deleteTask(taskId);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
     @PostMapping("/{taskId}/subtasks")
     public ResponseEntity<Tasks> addSubTaskToTask(@PathVariable Long taskId, @RequestBody SubTasks subTask) {
         Tasks updatedTask = taskService.addSubTaskToTask(taskId, subTask);
         return new ResponseEntity<>(updatedTask, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{taskId}")
+    public ResponseEntity<?> deleteTask(@RequestHeader("Authorization") String token, @PathVariable Long taskId) {
+        return taskService.deleteTask(token, taskId);
+
     }
 }

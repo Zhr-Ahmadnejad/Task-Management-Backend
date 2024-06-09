@@ -165,7 +165,7 @@ public class BoardServiceImpl implements BoardService {
                         .body(e.getMessage());
             } else {
                 // Handle other exceptions
-                throw new RuntimeException("An error occurred while updating user", e);
+                throw new RuntimeException("An error occurred while delete board", e);
             }
         }
     }
