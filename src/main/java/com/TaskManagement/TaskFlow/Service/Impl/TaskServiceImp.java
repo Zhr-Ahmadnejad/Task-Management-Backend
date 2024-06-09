@@ -9,12 +9,15 @@ import com.TaskManagement.TaskFlow.Model.SubTasks;
 import com.TaskManagement.TaskFlow.Model.TaskStates;
 import com.TaskManagement.TaskFlow.Model.Tasks;
 import com.TaskManagement.TaskFlow.Model.Users;
+import com.TaskManagement.TaskFlow.Repository.SubTaskRepository;
 import com.TaskManagement.TaskFlow.Repository.TaskRepository;
 import com.TaskManagement.TaskFlow.Service.BoardService;
 import com.TaskManagement.TaskFlow.Service.TaskService;
 import com.TaskManagement.TaskFlow.Service.TaskStateService;
 import com.TaskManagement.TaskFlow.Service.TokenService;
 import com.TaskManagement.TaskFlow.Service.UserService;
+import com.TaskManagement.TaskFlow.Vo.SubTaskVo;
+import com.TaskManagement.TaskFlow.Vo.TaskStateVo;
 import com.TaskManagement.TaskFlow.Vo.TaskVo;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,16 +38,19 @@ public class TaskServiceImp implements TaskService {
     private final UserService userService;
     private final BoardService boardService;
     private final TaskStateService taskStateService;
+    private final SubTaskRepository subTaskRepository;
 
 
     @Autowired
     public TaskServiceImp(TaskRepository taskRepository, TokenService tokenService,
-            UserService userService, BoardService boardService, TaskStateService taskStateService) {
+            UserService userService, BoardService boardService, TaskStateService taskStateService, SubTaskRepository subTaskRepository) {
         this.taskRepository = taskRepository;
         this.tokenService = tokenService;
         this.userService = userService;
         this.boardService = boardService;
         this.taskStateService = taskStateService;
+        this.subTaskRepository = subTaskRepository;
+
     }
 
     public ResponseEntity<?> getAllTasks(String token , TaskDto taskDto) {
@@ -56,7 +62,7 @@ public class TaskServiceImp implements TaskService {
             Boards board = new Boards();
             board = boardService.findBoardsById(taskDto.getBoardId());
             TaskStates taskState = new TaskStates();
-            taskState = taskStateService.findTaskStateById(taskDto.getStateId());
+            taskState = taskStateService.findTaskStateById(taskDto.getTaskStateId());
             List<Tasks> tasks = new ArrayList<>();
             tasks = taskRepository.findByBoardAndUserAndState(board, user, taskState);
             List<TaskVo> taskVos = mapEntitiesToVos(tasks);
@@ -88,14 +94,23 @@ public class TaskServiceImp implements TaskService {
             Boards board = new Boards();
             board = boardService.findBoardsById(taskDtO.getBoardId());
             TaskStates taskState = new TaskStates();
-            taskState = taskStateService.findTaskStateById(taskDtO.getStateId());
+            taskState = taskStateService.findTaskStateById(taskDtO.getTaskStateId());
             Tasks task = new Tasks();
             task.setTaskName(taskDtO.getTaskName());
             task.setDescription(taskDtO.getDescription());
             task.setBoard(board);
             task.setState(taskState);
             task.setUser(user);
-            TaskVo taskVo = mapEntitieToVo(taskRepository.save(task));
+            Tasks saveTask = taskRepository.save(task);
+            List<SubTasks> savSubTasks = new ArrayList<>();
+            for (String subtaskName : taskDtO.getSubTasks()){
+                SubTasks subTasks = new SubTasks();
+                subTasks.setTitle(subtaskName);
+                subTasks.setTask(saveTask);
+                SubTasks saveSubTasks = subTaskRepository.save(subTasks);
+                savSubTasks.add(saveSubTasks);
+            }
+            TaskVo taskVo = mapEntitieToVo(saveTask , savSubTasks);
             return new ResponseEntity<>(taskVo, HttpStatus.CREATED);
 
        } catch (Exception e) {
@@ -132,8 +147,19 @@ public class TaskServiceImp implements TaskService {
         taskRepository.deleteById(taskId);
     }
 
-    private TaskVo mapEntitieToVo(Tasks task){
-        TaskVo taskVo = new TaskVo(task.getId() , task.getTaskName() , task.getDescription() , task.getState().getId() , task.getBoard().getId());
+    private TaskVo mapEntitieToVo(Tasks task , List<SubTasks> subTasks){
+        TaskVo taskVo = new TaskVo();
+        taskVo.setId(task.getId());
+        taskVo.setTaskName(task.getTaskName());
+        taskVo.setDescription(task.getDescription());
+        taskVo.setStateId(task.getState().getId());
+        taskVo.setBoardId(task.getBoard().getId());
+        List<SubTaskVo> subTaskVos = new ArrayList<>();
+        for (SubTasks subTaskVo : subTasks){
+            TaskStateVo taskStateVo = new TaskStateVo();
+            
+        }
+
         return taskVo;
 
     }
@@ -151,5 +177,4 @@ public class TaskServiceImp implements TaskService {
         return taskVos;
 
     }
-
 }

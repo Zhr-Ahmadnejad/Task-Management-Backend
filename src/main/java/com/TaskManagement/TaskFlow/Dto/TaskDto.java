@@ -1,7 +1,8 @@
 package com.TaskManagement.TaskFlow.Dto;
 
-import java.util.Set;
 
+
+import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -15,8 +16,10 @@ public class TaskDto {
 
     private String description;
 
-    private Long stateId;
+    private Long taskStateId;
 
     private Long boardId;
+
+    private List<String> subTasks;
     
 }
