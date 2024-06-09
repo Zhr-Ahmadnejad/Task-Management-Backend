@@ -13,20 +13,19 @@ import org.springframework.web.bind.annotation.*;
 public class BoardController {
 
     private final BoardService boardService;
-    
 
     @Autowired
-    public BoardController(BoardService boardService ) {
+    public BoardController(BoardService boardService) {
         this.boardService = boardService;
-        
+
     }
 
     @PostMapping()
     public ResponseEntity<?> createBoard(@RequestBody BoardDto boardDTO, @RequestHeader("Authorization") String token) {
-        try{
-        // Extract user ID from token and pass it to service
-        ResponseEntity<?> response = boardService.createBoard(token ,boardDTO);
-        return response;
+        try {
+            // Extract user ID from token and pass it to service
+            ResponseEntity<?> response = boardService.createBoard(token, boardDTO);
+            return response;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
@@ -44,8 +43,9 @@ public class BoardController {
     }
 
     @PutMapping("/{boardId}")
-    public ResponseEntity<?> updateBoardName(@RequestHeader("Authorization") String token ,@PathVariable Long boardId, @RequestBody BoardDto boardDTO) {
-        try{
+    public ResponseEntity<?> updateBoardName(@RequestHeader("Authorization") String token, @PathVariable Long boardId,
+            @RequestBody BoardDto boardDTO) {
+        try {
             ResponseEntity<?> response = boardService.updateBoardName(boardId, boardDTO, token);
             return response;
         } catch (Exception e) {
@@ -54,4 +54,9 @@ public class BoardController {
 
     }
 
+    @DeleteMapping("/{boardId}")
+    public ResponseEntity<?> deleteBoard(@RequestHeader("Authorization") String token, @PathVariable Long boardId) {
+        return boardService.deleteBoard(token, boardId);
+
+    }
 }

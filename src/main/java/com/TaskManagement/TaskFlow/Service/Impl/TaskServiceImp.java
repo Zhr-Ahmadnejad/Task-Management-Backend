@@ -177,18 +177,4 @@ public class TaskServiceImp implements TaskService {
         return taskVo;
 
     }
-    private List<TaskVo> mapEntitiesToVos(List<Tasks> tasks){
-        List<TaskVo> taskVos = new ArrayList<>();
-        for (Tasks task : tasks ){
-            TaskVo taskVo = new TaskVo();
-            taskVo.setId(task.getId());
-            taskVo.setTaskName(task.getTaskName());
-            taskVo.setDescription(task.getDescription());
-            taskVo.setStateId(task.getState().getId());
-            taskVo.setBoardId(task.getBoard().getId());
-            taskVos.add(taskVo);
-        }
-        return taskVos;
-
-    }
 }

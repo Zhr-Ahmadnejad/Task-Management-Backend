@@ -141,6 +141,35 @@ public class BoardServiceImpl implements BoardService {
         }
     }
 
+    
+    @Override
+    public ResponseEntity<?> deleteBoard(String token, Long boardId) {
+        try {
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            Boards board = boardRepository.findById(boardId).orElse(null);
+            if (board != null && board.getUser().equals(user)) {
+                boardRepository.delete(board);
+                return ResponseEntity.status(HttpStatus.OK)
+                .body("Board deleted successfully");
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("You are not authorized to delete this board or the board was not found");
+            }
+        } catch (Exception e) {
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while updating user", e);
+            }
+        }
+    }
+
     private BoardVo mapEntityToVO(Boards board, List<TaskStates> taskStates) {
         BoardVo boardVO = new BoardVo();
         boardVO.setId(board.getId());
