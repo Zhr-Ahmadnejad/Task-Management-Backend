@@ -14,4 +14,5 @@ public interface BoardService {
     ResponseEntity<?> getUserBoards(String token);
     ResponseEntity<?> updateBoardName(Long boardId, BoardDto boardDTO, String token);
     ResponseEntity<?> deleteBoard(String token, Long boardId);
+    ResponseEntity<?> getBoardInfo(String token, Long boardId);
 }

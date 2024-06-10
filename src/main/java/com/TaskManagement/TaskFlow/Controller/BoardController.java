@@ -59,4 +59,15 @@ public class BoardController {
         return boardService.deleteBoard(token, boardId);
 
     }
+
+    
+    @GetMapping("/{boardId}")
+    public ResponseEntity<?> getBoardInfo(@RequestHeader("Authorization") String token, @PathVariable Long boardId) {
+        try {
+            ResponseEntity<?> response = boardService.getBoardInfo(token , boardId);
+            return response;
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

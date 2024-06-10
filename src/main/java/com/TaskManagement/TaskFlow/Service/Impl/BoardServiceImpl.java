@@ -143,6 +143,30 @@ public class BoardServiceImpl implements BoardService {
 
     
     @Override
+    public ResponseEntity<?> getBoardInfo(String token, Long boardId) {
+        try {
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            Boards board = boardRepository.findById(boardId).orElse(null);
+            List<TaskStates> taskStates = taskStateRepository.findByBoardAndUser(board, user);
+            BoardVo boardVo = mapEntityToVO(board, taskStates);
+            return new ResponseEntity<>(boardVo, HttpStatus.OK);
+        } catch (Exception e) {
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while get board info", e);
+            }
+        }
+    }
+
+    
+    @Override
     public ResponseEntity<?> deleteBoard(String token, Long boardId) {
         try {
             String extractedToken = tokenService.validateToken(token);
