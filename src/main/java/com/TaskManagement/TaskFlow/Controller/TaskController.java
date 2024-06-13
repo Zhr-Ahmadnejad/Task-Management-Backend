@@ -51,9 +51,8 @@ public class TaskController {
     }
 
     @PutMapping("/{taskId}")
-    public ResponseEntity<Tasks> updateTask(@PathVariable Long taskId, @RequestBody Tasks task) {
-        Tasks updatedTask = taskService.updateTask(taskId, task);
-        return new ResponseEntity<>(updatedTask, HttpStatus.OK);
+    public ResponseEntity<?> updateTask(@RequestHeader("Authorization") String token, @PathVariable Long taskId, @RequestBody TaskDto task) {
+        return taskService.updateTask(token,taskId, task);
     }
 
     @PostMapping("/{taskId}/subtasks")

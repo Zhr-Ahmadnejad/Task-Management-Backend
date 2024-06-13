@@ -11,6 +11,7 @@ import com.TaskManagement.TaskFlow.Model.Tasks;
 import com.TaskManagement.TaskFlow.Model.Users;
 import com.TaskManagement.TaskFlow.Repository.SubTaskRepository;
 import com.TaskManagement.TaskFlow.Repository.TaskRepository;
+import com.TaskManagement.TaskFlow.Repository.TaskStateRepository;
 import com.TaskManagement.TaskFlow.Service.BoardService;
 import com.TaskManagement.TaskFlow.Service.TaskService;
 import com.TaskManagement.TaskFlow.Service.TaskStateService;
@@ -28,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-
 @Service
 public class TaskServiceImp implements TaskService {
 
@@ -38,23 +38,25 @@ public class TaskServiceImp implements TaskService {
     private final BoardService boardService;
     private final TaskStateService taskStateService;
     private final SubTaskRepository subTaskRepository;
-
+    private final TaskStateRepository taskStateRepository;
 
     @Autowired
     public TaskServiceImp(TaskRepository taskRepository, TokenService tokenService,
-            UserService userService, BoardService boardService, TaskStateService taskStateService, SubTaskRepository subTaskRepository) {
+            UserService userService, BoardService boardService, TaskStateService taskStateService,
+            SubTaskRepository subTaskRepository, TaskStateRepository taskStateRepository) {
         this.taskRepository = taskRepository;
         this.tokenService = tokenService;
         this.userService = userService;
         this.boardService = boardService;
         this.taskStateService = taskStateService;
         this.subTaskRepository = subTaskRepository;
+        this.taskStateRepository = taskStateRepository;
 
     }
 
     @Override
-    public ResponseEntity<?> getAllTasks(String token , TaskDto taskDto) {
-        try{
+    public ResponseEntity<?> getAllTasks(String token, TaskDto taskDto) {
+        try {
             String extractedToken = tokenService.validateToken(token);
             // Extract email from token
             String userEmail = tokenService.extractEmailFromToken(extractedToken);
@@ -66,7 +68,7 @@ public class TaskServiceImp implements TaskService {
             List<Tasks> tasks = new ArrayList<>();
             tasks = taskRepository.findByBoardAndUserAndState(board, user, taskState);
             List<TaskVo> taskVos = new ArrayList<>();
-            for(Tasks task: tasks){
+            for (Tasks task : tasks) {
                 List<SubTasks> subTasks = subTaskRepository.findByTask(task);
                 taskVos.add(mapEntitieToVo(task, subTasks));
             }
@@ -108,7 +110,7 @@ public class TaskServiceImp implements TaskService {
             task.setUser(user);
             Tasks saveTask = taskRepository.save(task);
             List<SubTasks> savSubTasks = new ArrayList<>();
-            for (String subtaskName : taskDtO.getSubTasks()){
+            for (String subtaskName : taskDtO.getSubTasks()) {
                 SubTasks subTasks = new SubTasks();
                 subTasks.setTitle(subtaskName);
                 subTasks.setTask(saveTask);
@@ -116,10 +118,10 @@ public class TaskServiceImp implements TaskService {
                 SubTasks saveSubTasks = subTaskRepository.save(subTasks);
                 savSubTasks.add(saveSubTasks);
             }
-            TaskVo taskVo = mapEntitieToVo(saveTask , savSubTasks);
+            TaskVo taskVo = mapEntitieToVo(saveTask, savSubTasks);
             return new ResponseEntity<>(taskVo, HttpStatus.CREATED);
 
-       } catch (Exception e) {
+        } catch (Exception e) {
             if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
                     || e instanceof TokenValidationException) {
                 // Handle token related exceptions
@@ -133,15 +135,59 @@ public class TaskServiceImp implements TaskService {
     }
 
     @Override
-    public Tasks updateTask(Long taskId, Tasks newTask) {
-        return taskRepository.findById(taskId).map(task -> {
-            task.setTaskName(newTask.getTaskName());
-            task.setDescription(newTask.getDescription());
-            task.setUser(newTask.getUser());
-            task.setState(newTask.getState());
-            task.setSubTasks(newTask.getSubTasks());
-            return taskRepository.save(task);
-        }).orElseThrow(() -> new RuntimeException("Task not found"));
+    public ResponseEntity<?> updateTask(String token, Long taskId, TaskDto taskDtO) {
+        try {
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            Tasks task = taskRepository.findById(taskId).orElse(null);
+            if (task.getUser() != user) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("The board with this ID is not found for this user.");
+            } else {
+                if (taskDtO.getTaskName() != null) {
+                    task.setTaskName(taskDtO.getTaskName());
+                }
+                if (taskDtO.getDescription() != null) {
+                    task.setDescription(taskDtO.getDescription());
+                }
+                if (taskDtO.getTaskStateId() != null) {
+                    if (taskStateRepository.findById(taskDtO.getTaskStateId()).orElse(null) != null) {
+                        task.setState(taskStateRepository.findById(taskDtO.getTaskStateId()).get());
+                    } else {
+                        return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body(" This task state is not found for this board.");
+                    }
+                }
+                Tasks saveTask = taskRepository.save(task);
+                if (taskDtO.getSubTasks() != null) {
+                    List<SubTasks> savSubTasks = new ArrayList<>();
+                    for (String subtaskName : taskDtO.getSubTasks()) {
+                        SubTasks subTasks = new SubTasks();
+                        subTasks.setTitle(subtaskName);
+                        subTasks.setTask(saveTask);
+                        subTasks.setActive(true);
+                        SubTasks saveSubTasks = subTaskRepository.save(subTasks);
+                        savSubTasks.add(saveSubTasks);
+                    }
+                } 
+                    TaskVo taskVo = mapEntitieToVo(saveTask, subTaskRepository.findByTask(saveTask));
+                    return new ResponseEntity<>(taskVo, HttpStatus.CREATED);
+
+            }
+        }
+
+        catch (Exception e) {
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while updating user", e);
+            }
+        }
     }
 
     @Override
@@ -161,10 +207,10 @@ public class TaskServiceImp implements TaskService {
             if (task != null && task.getUser().equals(user)) {
                 taskRepository.delete(task);
                 return ResponseEntity.status(HttpStatus.OK)
-                .body("Task deleted successfully");
+                        .body("Task deleted successfully");
             } else {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body("You are not authorized to delete this task or the task was not found");
+                        .body("You are not authorized to delete this task or the task was not found");
             }
         } catch (Exception e) {
             if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
@@ -179,7 +225,7 @@ public class TaskServiceImp implements TaskService {
         }
     }
 
-    private TaskVo mapEntitieToVo(Tasks task , List<SubTasks> subTasks){
+    private TaskVo mapEntitieToVo(Tasks task, List<SubTasks> subTasks) {
         TaskVo taskVo = new TaskVo();
         taskVo.setId(task.getId());
         taskVo.setTaskName(task.getTaskName());
@@ -187,7 +233,7 @@ public class TaskServiceImp implements TaskService {
         taskVo.setStateId(task.getState().getId());
         taskVo.setBoardId(task.getBoard().getId());
         List<SubTaskVo> subTaskVos = new ArrayList<>();
-        for (SubTasks subTask : subTasks){
+        for (SubTasks subTask : subTasks) {
             SubTaskVo subtaskVo = new SubTaskVo();
             subtaskVo.setActive(subTask.isActive());
             subtaskVo.setId(subTask.getId());

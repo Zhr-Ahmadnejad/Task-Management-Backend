@@ -1,5 +1,6 @@
 package com.TaskManagement.TaskFlow.Controller;
 
+import com.TaskManagement.TaskFlow.Dto.UserDto;
 import com.TaskManagement.TaskFlow.Model.Users;
 import com.TaskManagement.TaskFlow.Service.UserService;
 
@@ -9,13 +10,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 import javax.naming.NameNotFoundException;
-import javax.validation.Valid;
+
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/user")
 public class UserController {
 
     private final UserService userService;
@@ -32,10 +32,8 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<Users> getUserById(@RequestHeader("Authorization") String token,@PathVariable Long userId) {
-        Optional<Users> user = userService.getUserById(userId);
-        return user.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    public ResponseEntity<?> getUserById(@RequestHeader("Authorization") String token,@PathVariable Long userId) {
+        return userService.getUserById(token,userId);
     }
 
     @PostMapping
@@ -45,15 +43,9 @@ public class UserController {
     }
 
     @PutMapping
-    public ResponseEntity<Users> updateUser(
-            @RequestHeader("Authorization") String token,
-            @Valid @RequestBody Users newUser) {
-        try {
-            Users updatedUser = userService.updateUser(token, newUser);
-            return ResponseEntity.ok(updatedUser);
-        } catch (NameNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    public ResponseEntity<?> updateUser( @RequestHeader("Authorization") String token, @RequestBody UserDto newUser) throws NameNotFoundException {
+            return userService.updateUser(token, newUser);
+  
     }
 
     @DeleteMapping("/{id}")

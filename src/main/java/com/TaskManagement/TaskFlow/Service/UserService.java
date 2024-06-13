@@ -1,13 +1,12 @@
 package com.TaskManagement.TaskFlow.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 import javax.naming.NameNotFoundException;
-import javax.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
 
+import com.TaskManagement.TaskFlow.Dto.UserDto;
 import com.TaskManagement.TaskFlow.Model.Users;
 
 public interface UserService {
@@ -18,11 +17,11 @@ public interface UserService {
 
     List<Users> getAllUsers();
 
-    Optional<Users> getUserById(Long userId);
+    ResponseEntity<?> getUserById(String token, Long userId);
 
     Users createUser(Users user);
 
-    Users updateUser(String token, @Valid Users newUser) throws NameNotFoundException;
+    ResponseEntity<?> updateUser(String token, UserDto newUser) throws NameNotFoundException;
 
     ResponseEntity<?> deleteUser(String token, Long userId);
 }

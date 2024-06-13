@@ -16,7 +16,7 @@ public interface TaskService {
 
     ResponseEntity<?> createTask(String token, @Valid TaskDto taskDTO);
 
-    Tasks updateTask(Long taskId, Tasks task);
+    ResponseEntity<?> updateTask(String token, Long taskId, TaskDto taskDtO);
 
     ResponseEntity<?> deleteTask(String token, Long taskId);
 
