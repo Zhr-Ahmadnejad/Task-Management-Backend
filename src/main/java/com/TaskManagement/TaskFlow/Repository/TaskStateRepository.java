@@ -11,4 +11,6 @@ import com.TaskManagement.TaskFlow.Model.Users;
 public interface TaskStateRepository extends  JpaRepository<TaskStates, Long> {
 
     List<TaskStates> findByBoardAndUser(Boards board, Users user);
+
+    void deleteByBoardId(Long boardId);
 }

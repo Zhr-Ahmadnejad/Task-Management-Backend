@@ -3,6 +3,8 @@ package com.TaskManagement.TaskFlow.Service.Impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ import com.TaskManagement.TaskFlow.Service.UserService;
 import com.TaskManagement.TaskFlow.Vo.BoardVo;
 import com.TaskManagement.TaskFlow.Vo.TaskStateVo;
 
+@Transactional
 @Service
 public class BoardServiceImpl implements BoardService {
 
@@ -101,6 +104,7 @@ public class BoardServiceImpl implements BoardService {
                 Boards savedBoard = boardRepository.save(board);
                 List<TaskStates> saveTaskStates = new ArrayList<>();
                 if(boardDTO.getTaskStates() != null){
+                    taskStateRepository.deleteByBoardId(boardId);
                     for (String taskStateName : boardDTO.getTaskStates()) {
                         TaskStates taskState = new TaskStates();
                         taskState.setStateName(taskStateName);
