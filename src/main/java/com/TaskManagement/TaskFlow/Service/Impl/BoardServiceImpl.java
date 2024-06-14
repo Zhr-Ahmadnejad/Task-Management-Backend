@@ -100,12 +100,14 @@ public class BoardServiceImpl implements BoardService {
                 board.setBoardName(boardDTO.getBoardName());
                 Boards savedBoard = boardRepository.save(board);
                 List<TaskStates> saveTaskStates = new ArrayList<>();
-                for (String taskStateName : boardDTO.getTaskStates()) {
-                    TaskStates taskState = new TaskStates();
-                    taskState.setStateName(taskStateName);
-                    taskState.setBoard(savedBoard);
-                    taskState.setUser(user);
-                    taskStateRepository.save(taskState);
+                if(boardDTO.getTaskStates() != null){
+                    for (String taskStateName : boardDTO.getTaskStates()) {
+                        TaskStates taskState = new TaskStates();
+                        taskState.setStateName(taskStateName);
+                        taskState.setBoard(savedBoard);
+                        taskState.setUser(user);
+                        taskStateRepository.save(taskState);
+                    }
                 }
                 for(TaskStates getTaskStates : taskStateRepository.findByBoardAndUser(savedBoard, user)){
                     saveTaskStates.add(getTaskStates);
