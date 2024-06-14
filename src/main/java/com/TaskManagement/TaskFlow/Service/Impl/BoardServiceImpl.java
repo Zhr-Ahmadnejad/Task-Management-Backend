@@ -105,8 +105,10 @@ public class BoardServiceImpl implements BoardService {
                     taskState.setStateName(taskStateName);
                     taskState.setBoard(savedBoard);
                     taskState.setUser(user);
-                    TaskStates savedTaskState = taskStateRepository.save(taskState);
-                    saveTaskStates.add(savedTaskState);
+                    taskStateRepository.save(taskState);
+                }
+                for(TaskStates getTaskStates : taskStateRepository.findByBoardAndUser(savedBoard, user)){
+                    saveTaskStates.add(getTaskStates);
                 }
                 // Map Entity to VO and return
                 BoardVo boardVo = mapEntityToVO(savedBoard, saveTaskStates);
