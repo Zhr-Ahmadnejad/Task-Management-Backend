@@ -8,5 +8,5 @@ import lombok.Setter;
 public class SubTaskDto {
     private String title;
     private boolean isActive;
-    public Long getTaskId;
+    private Long taskId;
 }

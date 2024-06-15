@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.TaskManagement.TaskFlow.Dto.SubTaskDto;
-import com.TaskManagement.TaskFlow.Dto.TaskDto;
 import com.TaskManagement.TaskFlow.Service.SubTasksService;
 import org.springframework.web.bind.annotation.PutMapping;
 
@@ -45,7 +44,7 @@ public class SubTasksController {
         }
     }
 
-    @PutMapping("/{subTaskId}")
+    @PutMapping("/isActive/{subTaskId}")
     public ResponseEntity<?> updateIsActive(@RequestHeader("Authorization") String token, @PathVariable Long subTaskId ,  @RequestBody SubTaskDto subTaskDTO){
         try {
             ResponseEntity<?> response = subTasksService.updateIsActive(token, subTaskId, subTaskDTO);

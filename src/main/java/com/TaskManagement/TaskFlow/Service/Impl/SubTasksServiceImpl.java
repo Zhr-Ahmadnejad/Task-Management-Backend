@@ -68,7 +68,7 @@ public class SubTasksServiceImpl implements SubTasksService {
     public ResponseEntity<?> createTask(String token, SubTaskDto subTaskDTO) {
         try {
             String extractedToken = tokenService.validateToken(token);
-            Tasks task = taskRepository.findById(subTaskDTO.getTaskId).orElse(null);
+            Tasks task = taskRepository.findById(subTaskDTO.getTaskId()).orElse(null);
             SubTasks subTask = new SubTasks();
             subTask.setTitle(subTaskDTO.getTitle());
             subTask.setActive(true);
