@@ -29,6 +29,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import javax.transaction.Transactional;
+
+@Transactional
 @Service
 public class TaskServiceImp implements TaskService {
 
@@ -69,7 +72,7 @@ public class TaskServiceImp implements TaskService {
             tasks = taskRepository.findByBoardAndUserAndState(board, user, taskState);
             List<TaskVo> taskVos = new ArrayList<>();
             for (Tasks task : tasks) {
-                List<SubTasks> subTasks = subTaskRepository.findByTask(task);
+                List<SubTasks> subTasks = subTaskRepository.findByTaskId(task.getId());
                 taskVos.add(mapEntitieToVo(task, subTasks));
             }
             return new ResponseEntity<>(taskVos, HttpStatus.OK);
@@ -102,6 +105,10 @@ public class TaskServiceImp implements TaskService {
             board = boardService.findBoardsById(taskDtO.getBoardId());
             TaskStates taskState = new TaskStates();
             taskState = taskStateService.findTaskStateById(taskDtO.getTaskStateId());
+            if (board == null || taskState == null || taskState.getBoard() != board || taskState.getUser() != user) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(" data isn't true");
+            }
             Tasks task = new Tasks();
             task.setTaskName(taskDtO.getTaskName());
             task.setDescription(taskDtO.getDescription());
@@ -110,13 +117,15 @@ public class TaskServiceImp implements TaskService {
             task.setUser(user);
             Tasks saveTask = taskRepository.save(task);
             List<SubTasks> savSubTasks = new ArrayList<>();
-            for (String subtaskName : taskDtO.getSubTasks()) {
-                SubTasks subTasks = new SubTasks();
-                subTasks.setTitle(subtaskName);
-                subTasks.setTask(saveTask);
-                subTasks.setActive(true);
-                SubTasks saveSubTasks = subTaskRepository.save(subTasks);
-                savSubTasks.add(saveSubTasks);
+            if(taskDtO.getSubTasks() != null){
+                for (String subtaskName : taskDtO.getSubTasks()) {
+                    SubTasks subTasks = new SubTasks();
+                    subTasks.setTitle(subtaskName);
+                    subTasks.setTask(saveTask);
+                    subTasks.setActive(true);
+                    SubTasks saveSubTasks = subTaskRepository.save(subTasks);
+                    savSubTasks.add(saveSubTasks);
+                }
             }
             TaskVo taskVo = mapEntitieToVo(saveTask, savSubTasks);
             return new ResponseEntity<>(taskVo, HttpStatus.CREATED);
@@ -160,19 +169,23 @@ public class TaskServiceImp implements TaskService {
                     }
                 }
                 Tasks saveTask = taskRepository.save(task);
+                List<SubTasks> savSubTasks = new ArrayList<>();
                 if (taskDtO.getSubTasks() != null) {
-                    List<SubTasks> savSubTasks = new ArrayList<>();
+                    subTaskRepository.deleteByTaskId(taskId);
                     for (String subtaskName : taskDtO.getSubTasks()) {
                         SubTasks subTasks = new SubTasks();
                         subTasks.setTitle(subtaskName);
                         subTasks.setTask(saveTask);
                         subTasks.setActive(true);
-                        SubTasks saveSubTasks = subTaskRepository.save(subTasks);
-                        savSubTasks.add(saveSubTasks);
+                        subTaskRepository.save(subTasks);
                     }
-                } 
-                    TaskVo taskVo = mapEntitieToVo(saveTask, subTaskRepository.findByTask(saveTask));
-                    return new ResponseEntity<>(taskVo, HttpStatus.CREATED);
+                }
+                for(SubTasks geSubTasks : subTaskRepository.findByTaskId(saveTask.getId())){
+                    savSubTasks.add(geSubTasks);
+                }
+                
+                TaskVo taskVo = mapEntitieToVo(saveTask, savSubTasks);
+                return new ResponseEntity<>(taskVo, HttpStatus.CREATED);
 
             }
         }
@@ -230,7 +243,7 @@ public class TaskServiceImp implements TaskService {
         taskVo.setId(task.getId());
         taskVo.setTaskName(task.getTaskName());
         taskVo.setDescription(task.getDescription());
-        taskVo.setStateId(task.getState().getId());
+        taskVo.setTaskStateId(task.getState().getId());
         taskVo.setBoardId(task.getBoard().getId());
         List<SubTaskVo> subTaskVos = new ArrayList<>();
         for (SubTasks subTask : subTasks) {

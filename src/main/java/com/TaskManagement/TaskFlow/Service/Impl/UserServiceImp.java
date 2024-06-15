@@ -72,14 +72,22 @@ public class UserServiceImp implements UserService{
             String extractedToken = tokenService.validateToken(token);
             String userEmail = tokenService.extractEmailFromToken(extractedToken);
             Users user = findUserByEmail(userEmail);
-            if(userRepository.findByEmail(newUser.getEmail()).isPresent()){
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body("for this email accound is find");
+            if(newUser.getEmail() != null){
+                if(userRepository.findByEmail(newUser.getEmail()).isPresent()){
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("for this email accound is find");
+                }
+                user.setEmail(newUser.getEmail());
             }
-            user.setFirstName(newUser.getFirstName());
-            user.setLastName(newUser.getLastName());
-            user.setEmail(newUser.getEmail());
-            user.setPassword(newUser.getPassword());
+            if(newUser.getFirstName() != null){
+                user.setFirstName(newUser.getFirstName());
+            }
+            if(newUser.getLastName() != null){
+                user.setLastName(newUser.getLastName());
+            }
+            if(newUser.getPassword() != null){
+                user.setPassword(newUser.getPassword());
+            }
             Users saveUser = userRepository.save(user);
             UserVo userVo = mapEntitieToVo(saveUser);
             return new ResponseEntity<>(userVo, HttpStatus.OK);

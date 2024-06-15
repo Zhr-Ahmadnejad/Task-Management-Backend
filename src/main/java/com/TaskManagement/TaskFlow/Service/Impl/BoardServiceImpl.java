@@ -100,7 +100,9 @@ public class BoardServiceImpl implements BoardService {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body("A board with the same name already exists for this user");
             } else {
-                board.setBoardName(boardDTO.getBoardName());
+                if(boardDTO.getBoardName() != null){
+                    board.setBoardName(boardDTO.getBoardName());
+                }
                 Boards savedBoard = boardRepository.save(board);
                 List<TaskStates> saveTaskStates = new ArrayList<>();
                 if(boardDTO.getTaskStates() != null){

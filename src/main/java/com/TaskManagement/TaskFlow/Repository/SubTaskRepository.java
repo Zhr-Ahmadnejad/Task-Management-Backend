@@ -8,5 +8,7 @@ import java.util.List;
 
 
 public interface SubTaskRepository extends JpaRepository<SubTasks, Long>{
-    List<SubTasks> findByTask(Tasks task);
+    List<SubTasks> findByTaskId(Long taskId);
+
+    void deleteByTaskId(Long taskId);
 }
