@@ -22,6 +22,6 @@ public interface TaskService {
 
     Tasks addSubTaskToTask(Long taskId, SubTasks subTask);
 
-    ResponseEntity<?> getAllTasks(String token, TaskDto taskDTO);
+    ResponseEntity<?> getAllTasks(String token, Long taskStateId , Long boardId);
 
 }

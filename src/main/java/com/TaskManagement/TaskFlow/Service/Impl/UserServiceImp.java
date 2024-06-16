@@ -1,31 +1,28 @@
 package com.TaskManagement.TaskFlow.Service.Impl;
 
 import java.util.List;
-import java.util.Optional;
 
 import javax.naming.NameNotFoundException;
-import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+
 
 import com.TaskManagement.TaskFlow.Dto.UserDto;
 import com.TaskManagement.TaskFlow.Exception.ExpiredTokenException;
 import com.TaskManagement.TaskFlow.Exception.InvalidTokenException;
 import com.TaskManagement.TaskFlow.Exception.TokenValidationException;
-import com.TaskManagement.TaskFlow.Model.Boards;
-import com.TaskManagement.TaskFlow.Model.TaskStates;
 import com.TaskManagement.TaskFlow.Model.Users;
 import com.TaskManagement.TaskFlow.Repository.UserRepository;
 import com.TaskManagement.TaskFlow.Service.SecurityService;
 import com.TaskManagement.TaskFlow.Service.TokenService;
 import com.TaskManagement.TaskFlow.Service.UserService;
-import com.TaskManagement.TaskFlow.Vo.TaskStateVo;
 import com.TaskManagement.TaskFlow.Vo.UserVo;
 
+@Transactional
 @Service
 public class UserServiceImp implements UserService{
 

@@ -58,16 +58,16 @@ public class TaskServiceImp implements TaskService {
     }
 
     @Override
-    public ResponseEntity<?> getAllTasks(String token, TaskDto taskDto) {
+    public ResponseEntity<?> getAllTasks(String token, Long taskStateId , Long boardId) {
         try {
             String extractedToken = tokenService.validateToken(token);
             // Extract email from token
             String userEmail = tokenService.extractEmailFromToken(extractedToken);
             Users user = userService.findUserByEmail(userEmail);
             Boards board = new Boards();
-            board = boardService.findBoardsById(taskDto.getBoardId());
+            board = boardService.findBoardsById(boardId);
             TaskStates taskState = new TaskStates();
-            taskState = taskStateService.findTaskStateById(taskDto.getTaskStateId());
+            taskState = taskStateService.findTaskStateById(taskStateId);
             List<Tasks> tasks = new ArrayList<>();
             tasks = taskRepository.findByBoardAndUserAndState(board, user, taskState);
             List<TaskVo> taskVos = new ArrayList<>();

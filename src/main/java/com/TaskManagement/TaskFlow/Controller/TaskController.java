@@ -23,9 +23,9 @@ public class TaskController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllTasks(@RequestHeader("Authorization") String token , @RequestBody TaskDto taskDTO) {
+    public ResponseEntity<?> getAllTasks(@RequestHeader("Authorization") String token , @RequestHeader Long boardId , @RequestHeader Long taskStateId) {
         try{
-            ResponseEntity<?> response = taskService.getAllTasks(token , taskDTO);
+            ResponseEntity<?> response = taskService.getAllTasks(token , taskStateId , boardId);
             return response;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
