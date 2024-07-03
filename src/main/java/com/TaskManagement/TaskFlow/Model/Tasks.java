@@ -23,6 +23,9 @@ public class Tasks {
     @Column
     private String description;
 
+    @Column
+    private String priority;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private Users user;

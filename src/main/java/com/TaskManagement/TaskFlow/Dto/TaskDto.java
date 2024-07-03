@@ -21,5 +21,7 @@ public class TaskDto {
     private Long boardId;
 
     private List<String> subTasks;
+
+    public String priority;
     
 }

@@ -13,5 +13,6 @@ import com.TaskManagement.TaskFlow.Model.Users;
 public interface TaskRepository extends JpaRepository<Tasks, Long> {
     List<Tasks> findByBoardAndUserAndState(Boards board, Users user, TaskStates state);
     Optional<Tasks> findById(Long id);
+    List<Tasks> findByState(TaskStates state);
 }
 

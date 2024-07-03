@@ -91,7 +91,7 @@ public class TaskServiceImp implements TaskService {
     }
 
     @Override
-    public Optional<Tasks> getTaskById(Long taskId) {
+    public Optional<Tasks> getTaskById(String token, Long taskId) {
         return taskRepository.findById(taskId);
     }
 
@@ -115,6 +115,7 @@ public class TaskServiceImp implements TaskService {
             task.setBoard(board);
             task.setState(taskState);
             task.setUser(user);
+            task.setPriority(taskDtO.priority);
             Tasks saveTask = taskRepository.save(task);
             List<SubTasks> savSubTasks = new ArrayList<>();
             if(taskDtO.getSubTasks() != null){
@@ -159,6 +160,9 @@ public class TaskServiceImp implements TaskService {
                 }
                 if (taskDtO.getDescription() != null) {
                     task.setDescription(taskDtO.getDescription());
+                }
+                if(taskDtO.getPriority() != null){
+                    task.setPriority(taskDtO.priority);
                 }
                 if (taskDtO.getTaskStateId() != null) {
                     if (taskStateRepository.findById(taskDtO.getTaskStateId()).orElse(null) != null) {
@@ -238,10 +242,41 @@ public class TaskServiceImp implements TaskService {
         }
     }
 
+    @Override
+    public ResponseEntity<?> getTasksinStart(String token) {
+        try {
+            String extractedToken = tokenService.validateToken(token);
+            String userEmail = tokenService.extractEmailFromToken(extractedToken);
+            Users user = userService.findUserByEmail(userEmail);
+            List<TaskStates> taskStates = taskStateRepository.findByStateNameAndUser("شروع", user);
+            List<TaskVo> taskVos = new ArrayList<>();
+            for (TaskStates taskState : taskStates){
+                List<Tasks> tasks = taskRepository.findByState(taskState);
+                for(Tasks task : tasks){
+                    List<SubTasks> subTasks = subTaskRepository.findByTaskId(task.getId());
+                    taskVos.add(mapEntitieToVo(task, subTasks));
+                }
+            }
+            return new ResponseEntity<>(taskVos, HttpStatus.OK);
+
+        } catch (Exception e) {
+            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                    || e instanceof TokenValidationException) {
+                // Handle token related exceptions
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(e.getMessage());
+            } else {
+                // Handle other exceptions
+                throw new RuntimeException("An error occurred while updating user", e);
+            }
+        }
+    }
+
     private TaskVo mapEntitieToVo(Tasks task, List<SubTasks> subTasks) {
         TaskVo taskVo = new TaskVo();
         taskVo.setId(task.getId());
         taskVo.setTaskName(task.getTaskName());
+        taskVo.setPriority(task.getPriority());
         taskVo.setDescription(task.getDescription());
         taskVo.setTaskStateId(task.getState().getId());
         taskVo.setBoardId(task.getBoard().getId());

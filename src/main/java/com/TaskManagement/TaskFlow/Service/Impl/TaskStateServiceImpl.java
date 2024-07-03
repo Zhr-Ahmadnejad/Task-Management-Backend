@@ -14,7 +14,6 @@ import com.TaskManagement.TaskFlow.Exception.InvalidTokenException;
 import com.TaskManagement.TaskFlow.Exception.TokenValidationException;
 import com.TaskManagement.TaskFlow.Model.Boards;
 import com.TaskManagement.TaskFlow.Model.TaskStates;
-import com.TaskManagement.TaskFlow.Model.Tasks;
 import com.TaskManagement.TaskFlow.Model.Users;
 import com.TaskManagement.TaskFlow.Repository.TaskStateRepository;
 import com.TaskManagement.TaskFlow.Service.BoardService;

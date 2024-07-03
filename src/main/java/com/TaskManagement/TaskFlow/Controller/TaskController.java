@@ -34,10 +34,20 @@ public class TaskController {
     }
 
     @GetMapping("/{taskId}")
-    public ResponseEntity<Tasks> getTaskById(@PathVariable Long taskId) {
-        Optional<Tasks> task = taskService.getTaskById(taskId);
+    public ResponseEntity<Tasks> getTaskById(@RequestHeader("Authorization") String token , @PathVariable Long taskId) {
+        Optional<Tasks> task = taskService.getTaskById(token,taskId);
         return task.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @GetMapping("/start")
+    public ResponseEntity<?> getTasksinStart(@RequestHeader("Authorization") String token ) {
+        try {
+            ResponseEntity<?> response = taskService.getTasksinStart(token);
+            return response;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     @PostMapping()
