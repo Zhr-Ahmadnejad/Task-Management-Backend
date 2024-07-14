@@ -230,15 +230,11 @@ public class BoardServiceImpl implements BoardService {
         return boardVO;
     }
 
-    private BoardVo mapEntityToVO(Boards board) {
-        BoardVo boardVO = new BoardVo();
-        boardVO.setId(board.getId());
-        boardVO.setBoardName(board.getBoardName());
-        return boardVO;
-    }
 
     public Boards findBoardsById(Long id) {
         return boardRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
+
+
 }

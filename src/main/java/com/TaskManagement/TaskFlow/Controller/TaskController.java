@@ -76,4 +76,15 @@ public class TaskController {
         return taskService.deleteTask(token, taskId);
 
     }
+
+    
+    @GetMapping("/boardId/{boardId}")
+    public ResponseEntity<?> getTasksByBoardId(@RequestHeader("Authorization") String token , @PathVariable Long boardId) {
+        try {
+            ResponseEntity<?> response = taskService.getTasksByBoardId(token, boardId);
+            return response;
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

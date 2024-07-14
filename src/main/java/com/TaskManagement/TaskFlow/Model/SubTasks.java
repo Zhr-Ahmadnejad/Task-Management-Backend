@@ -25,7 +25,7 @@ public class SubTasks {
     @Column
     private String title;
 
-    @Column(columnDefinition = "boolean default true")
+    @Column
     private boolean isActive;
 
     @ManyToOne

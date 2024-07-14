@@ -27,7 +27,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
@@ -58,25 +61,40 @@ public class TaskServiceImp implements TaskService {
     }
 
     @Override
-    public ResponseEntity<?> getAllTasks(String token, Long taskStateId , Long boardId) {
+    public ResponseEntity<?> getAllTasks(String token, Long taskStateId, Long boardId) {
         try {
+            // اعتبارسنجی توکن و استخراج ایمیل کاربر از توکن
             String extractedToken = tokenService.validateToken(token);
-            // Extract email from token
             String userEmail = tokenService.extractEmailFromToken(extractedToken);
             Users user = userService.findUserByEmail(userEmail);
-            Boards board = new Boards();
-            board = boardService.findBoardsById(boardId);
-            TaskStates taskState = new TaskStates();
-            taskState = taskStateService.findTaskStateById(taskStateId);
-            List<Tasks> tasks = new ArrayList<>();
-            tasks = taskRepository.findByBoardAndUserAndState(board, user, taskState);
+    
+            // پیدا کردن برد و وضعیت تسک
+            Boards board = boardService.findBoardsById(boardId);
+            TaskStates taskState = taskStateService.findTaskStateById(taskStateId);
+    
+            // بررسی اعتبار برد و وضعیت تسک
+            if (board == null || taskState == null || taskState.getBoard() != board || taskState.getUser() != user) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("Data isn't true or not associated with the user.");
+            }
+    
+            // پیدا کردن تمام تسک‌ها بر اساس برد، کاربر و وضعیت تسک
+            List<Tasks> tasks = taskRepository.findByBoardAndUserAndState(board, user, taskState);
             List<TaskVo> taskVos = new ArrayList<>();
+    
+            // تبدیل تسک‌ها به VO
             for (Tasks task : tasks) {
                 List<SubTasks> subTasks = subTaskRepository.findByTaskId(task.getId());
-                taskVos.add(mapEntitieToVo(task, subTasks));
+                List<Long> dependentTaskIds = task.getDependentTasks().stream()
+                        .map(Tasks::getId)
+                        .collect(Collectors.toList());
+    
+                TaskVo taskVo = mapEntityToVo(task, subTasks, dependentTaskIds);
+                taskVos.add(taskVo);
             }
+    
             return new ResponseEntity<>(taskVos, HttpStatus.OK);
-
+    
         } catch (Exception e) {
             if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
                     || e instanceof TokenValidationException) {
@@ -85,127 +103,166 @@ public class TaskServiceImp implements TaskService {
                         .body(e.getMessage());
             } else {
                 // Handle other exceptions
-                throw new RuntimeException("An error occurred while updating user", e);
+                throw new RuntimeException("An error occurred while fetching tasks", e);
             }
         }
     }
+    
 
     @Override
     public Optional<Tasks> getTaskById(String token, Long taskId) {
         return taskRepository.findById(taskId);
     }
 
-    @Override
-    public ResponseEntity<?> createTask(String token, TaskDto taskDtO) {
-        try {
-            String extractedToken = tokenService.validateToken(token);
-            String userEmail = tokenService.extractEmailFromToken(extractedToken);
-            Users user = userService.findUserByEmail(userEmail);
-            Boards board = new Boards();
-            board = boardService.findBoardsById(taskDtO.getBoardId());
-            TaskStates taskState = new TaskStates();
-            taskState = taskStateService.findTaskStateById(taskDtO.getTaskStateId());
-            if (board == null || taskState == null || taskState.getBoard() != board || taskState.getUser() != user) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(" data isn't true");
-            }
-            Tasks task = new Tasks();
-            task.setTaskName(taskDtO.getTaskName());
-            task.setDescription(taskDtO.getDescription());
-            task.setBoard(board);
-            task.setState(taskState);
-            task.setUser(user);
-            task.setPriority(taskDtO.priority);
-            Tasks saveTask = taskRepository.save(task);
-            List<SubTasks> savSubTasks = new ArrayList<>();
-            if(taskDtO.getSubTasks() != null){
-                for (String subtaskName : taskDtO.getSubTasks()) {
-                    SubTasks subTasks = new SubTasks();
-                    subTasks.setTitle(subtaskName);
-                    subTasks.setTask(saveTask);
-                    subTasks.setActive(true);
-                    SubTasks saveSubTasks = subTaskRepository.save(subTasks);
-                    savSubTasks.add(saveSubTasks);
-                }
-            }
-            TaskVo taskVo = mapEntitieToVo(saveTask, savSubTasks);
-            return new ResponseEntity<>(taskVo, HttpStatus.CREATED);
+@Override
+public ResponseEntity<?> createTask(String token, TaskDto taskDto) {
+    try {
+        String extractedToken = tokenService.validateToken(token);
+        String userEmail = tokenService.extractEmailFromToken(extractedToken);
+        Users user = userService.findUserByEmail(userEmail);
+        Boards board = boardService.findBoardsById(taskDto.getBoardId());
+        TaskStates taskState = taskStateService.findTaskStateById(taskDto.getTaskStateId());
 
-        } catch (Exception e) {
-            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
-                    || e instanceof TokenValidationException) {
-                // Handle token related exceptions
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(e.getMessage());
-            } else {
-                // Handle other exceptions
-                throw new RuntimeException("An error occurred while updating user", e);
+        if (board == null || taskState == null || taskState.getBoard() != board || taskState.getUser() != user) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Data isn't true");
+        }
+
+        // ایجاد تسک جدید
+        Tasks task = new Tasks();
+        task.setTaskName(taskDto.getTaskName());
+        task.setDescription(taskDto.getDescription());
+        task.setBoard(board);
+        task.setState(taskState);
+        task.setUser(user);
+
+        // اضافه کردن وابستگی‌های تسک‌ها
+        if (taskDto.getDependentTaskIds() != null) {
+            Set<Tasks> dependentTasks = taskDto.getDependentTaskIds().stream()
+                    .map(taskId -> taskRepository.findById(taskId).orElse(null))
+                    .filter(Objects::nonNull)  // حذف nulls
+                    .collect(Collectors.toSet());
+            task.setDependentTasks(dependentTasks);
+        }
+
+        Tasks saveTask = taskRepository.save(task);
+
+        // ایجاد زیر تسک‌ها
+        List<SubTasks> savSubTasks = new ArrayList<>();
+        if (taskDto.getSubTasks() != null) {
+            for (String subtaskName : taskDto.getSubTasks()) {
+                SubTasks subTasks = new SubTasks();
+                subTasks.setTitle(subtaskName);
+                subTasks.setTask(saveTask);
+                subTasks.setActive(true);
+                SubTasks saveSubTasks = subTaskRepository.save(subTasks);
+                savSubTasks.add(saveSubTasks);
             }
+        }
+
+        // تبدیل به VO
+        List<Long> dependentTaskIds = saveTask.getDependentTasks().stream()
+                .map(Tasks::getId)
+                .collect(Collectors.toList());
+        TaskVo taskVo = mapEntityToVo(saveTask, savSubTasks, dependentTaskIds);
+
+        return new ResponseEntity<>(taskVo, HttpStatus.CREATED);
+
+    } catch (Exception e) {
+        if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                || e instanceof TokenValidationException) {
+            // Handle token related exceptions
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(e.getMessage());
+        } else {
+            // Handle other exceptions
+            throw new RuntimeException("An error occurred while creating task", e);
         }
     }
+}
 
-    @Override
-    public ResponseEntity<?> updateTask(String token, Long taskId, TaskDto taskDtO) {
-        try {
-            String extractedToken = tokenService.validateToken(token);
-            String userEmail = tokenService.extractEmailFromToken(extractedToken);
-            Users user = userService.findUserByEmail(userEmail);
-            Tasks task = taskRepository.findById(taskId).orElse(null);
-            if (task.getUser() != user) {
+@Override
+public ResponseEntity<?> updateTask(String token, Long taskId, TaskDto taskDto) {
+    try {
+        String extractedToken = tokenService.validateToken(token);
+        String userEmail = tokenService.extractEmailFromToken(extractedToken);
+        Users user = userService.findUserByEmail(userEmail);
+        Tasks task = taskRepository.findById(taskId).orElse(null);
+
+        if (task == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Task with this ID not found.");
+        }
+
+        if (task.getUser() != user) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("The task does not belong to this user.");
+        }
+
+        // به‌روزرسانی ویژگی‌های تسک
+        if (taskDto.getTaskName() != null) {
+            task.setTaskName(taskDto.getTaskName());
+        }
+        if (taskDto.getDescription() != null) {
+            task.setDescription(taskDto.getDescription());
+        }
+        if (taskDto.getTaskStateId() != null) {
+            TaskStates newTaskState = taskStateRepository.findById(taskDto.getTaskStateId()).orElse(null);
+            if (newTaskState == null) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("The board with this ID is not found for this user.");
-            } else {
-                if (taskDtO.getTaskName() != null) {
-                    task.setTaskName(taskDtO.getTaskName());
-                }
-                if (taskDtO.getDescription() != null) {
-                    task.setDescription(taskDtO.getDescription());
-                }
-                if(taskDtO.getPriority() != null){
-                    task.setPriority(taskDtO.priority);
-                }
-                if (taskDtO.getTaskStateId() != null) {
-                    if (taskStateRepository.findById(taskDtO.getTaskStateId()).orElse(null) != null) {
-                        task.setState(taskStateRepository.findById(taskDtO.getTaskStateId()).get());
-                    } else {
-                        return ResponseEntity.status(HttpStatus.CONFLICT)
-                                .body(" This task state is not found for this board.");
-                    }
-                }
-                Tasks saveTask = taskRepository.save(task);
-                List<SubTasks> savSubTasks = new ArrayList<>();
-                if (taskDtO.getSubTasks() != null) {
-                    subTaskRepository.deleteByTaskId(taskId);
-                    for (String subtaskName : taskDtO.getSubTasks()) {
-                        SubTasks subTasks = new SubTasks();
-                        subTasks.setTitle(subtaskName);
-                        subTasks.setTask(saveTask);
-                        subTasks.setActive(true);
-                        subTaskRepository.save(subTasks);
-                    }
-                }
-                for(SubTasks geSubTasks : subTaskRepository.findByTaskId(saveTask.getId())){
-                    savSubTasks.add(geSubTasks);
-                }
-                
-                TaskVo taskVo = mapEntitieToVo(saveTask, savSubTasks);
-                return new ResponseEntity<>(taskVo, HttpStatus.CREATED);
+                        .body("This task state is not found.");
+            }
+            task.setState(newTaskState);
+        }
 
+        // به‌روزرسانی وابستگی‌های تسک
+        if (taskDto.getDependentTaskIds() != null) {
+            Set<Tasks> newDependentTasks = taskDto.getDependentTaskIds().stream()
+                    .map(depTaskId -> taskRepository.findById(depTaskId).orElse(null))
+                    .filter(Objects::nonNull)  // حذف nulls
+                    .collect(Collectors.toSet());
+            task.setDependentTasks(newDependentTasks);
+        }
+
+        // به‌روزرسانی زیر تسک‌ها
+        if (taskDto.getSubTasks() != null) {
+            subTaskRepository.deleteByTaskId(taskId);
+            for (String subtaskName : taskDto.getSubTasks()) {
+                SubTasks subTasks = new SubTasks();
+                subTasks.setTitle(subtaskName);
+                subTasks.setTask(task);
+                subTasks.setActive(true);
+                subTaskRepository.save(subTasks);
             }
         }
 
-        catch (Exception e) {
-            if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
-                    || e instanceof TokenValidationException) {
-                // Handle token related exceptions
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(e.getMessage());
-            } else {
-                // Handle other exceptions
-                throw new RuntimeException("An error occurred while updating user", e);
-            }
+        // ذخیره‌ی تسک به روز شده
+        Tasks saveTask = taskRepository.save(task);
+
+        // بازیابی زیر تسک‌ها برای ارسال به کاربر
+        List<SubTasks> savSubTasks = subTaskRepository.findByTaskId(saveTask.getId());
+
+        // تبدیل به VO
+        List<Long> dependentTaskIds = saveTask.getDependentTasks().stream()
+                .map(Tasks::getId)
+                .collect(Collectors.toList());
+
+        TaskVo taskVo = mapEntityToVo(saveTask, savSubTasks, dependentTaskIds);
+
+        return new ResponseEntity<>(taskVo, HttpStatus.OK);
+
+    } catch (Exception e) {
+        if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                || e instanceof TokenValidationException) {
+            // Handle token related exceptions
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(e.getMessage());
+        } else {
+            // Handle other exceptions
+            throw new RuntimeException("An error occurred while updating task", e);
         }
     }
+}
 
     @Override
     public Tasks addSubTaskToTask(Long taskId, SubTasks subTask) {
@@ -221,7 +278,19 @@ public class TaskServiceImp implements TaskService {
             String userEmail = tokenService.extractEmailFromToken(extractedToken);
             Users user = userService.findUserByEmail(userEmail);
             Tasks task = taskRepository.findById(taskId).orElse(null);
+            
             if (task != null && task.getUser().equals(user)) {
+                // حذف زیر تسک‌ها
+                subTaskRepository.deleteByTaskId(taskId);
+    
+                // حذف وابستگی‌ها: اگر تسک‌هایی به این تسک وابسته بودند، آنها را از لیست وابستگی‌هایشان حذف می‌کنیم
+                Set<Tasks> dependentTasks = task.getDependentTasks();
+                for (Tasks dependentTask : dependentTasks) {
+                    dependentTask.getDependentTasks().remove(task);
+                    taskRepository.save(dependentTask);
+                }
+    
+                // حذف تسک
                 taskRepository.delete(task);
                 return ResponseEntity.status(HttpStatus.OK)
                         .body("Task deleted successfully");
@@ -237,28 +306,44 @@ public class TaskServiceImp implements TaskService {
                         .body(e.getMessage());
             } else {
                 // Handle other exceptions
-                throw new RuntimeException("An error occurred while updating user", e);
+                throw new RuntimeException("An error occurred while deleting the task", e);
             }
         }
     }
+    
 
     @Override
     public ResponseEntity<?> getTasksinStart(String token) {
         try {
+            // اعتبارسنجی توکن و استخراج ایمیل کاربر از توکن
             String extractedToken = tokenService.validateToken(token);
             String userEmail = tokenService.extractEmailFromToken(extractedToken);
             Users user = userService.findUserByEmail(userEmail);
+    
+            // پیدا کردن وضعیت‌های تسک که نام آنها "شروع" است
             List<TaskStates> taskStates = taskStateRepository.findByStateNameAndUser("شروع", user);
+    
             List<TaskVo> taskVos = new ArrayList<>();
-            for (TaskStates taskState : taskStates){
+            for (TaskStates taskState : taskStates) {
+                // پیدا کردن تسک‌ها بر اساس وضعیت تسک
                 List<Tasks> tasks = taskRepository.findByState(taskState);
-                for(Tasks task : tasks){
+                for (Tasks task : tasks) {
+                    // پیدا کردن زیر تسک‌های هر تسک
                     List<SubTasks> subTasks = subTaskRepository.findByTaskId(task.getId());
-                    taskVos.add(mapEntitieToVo(task, subTasks));
+    
+                    // پیدا کردن ID‌های تسک‌های وابسته به این تسک
+                    List<Long> dependentTaskIds = task.getDependentTasks().stream()
+                            .map(Tasks::getId)
+                            .collect(Collectors.toList());
+    
+                    // تبدیل تسک‌ها به VO و اضافه کردن ID‌های وابسته
+                    TaskVo taskVo = mapEntityToVo(task, subTasks, dependentTaskIds);
+                    taskVos.add(taskVo);
                 }
             }
+    
             return new ResponseEntity<>(taskVos, HttpStatus.OK);
-
+    
         } catch (Exception e) {
             if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
                     || e instanceof TokenValidationException) {
@@ -267,16 +352,62 @@ public class TaskServiceImp implements TaskService {
                         .body(e.getMessage());
             } else {
                 // Handle other exceptions
-                throw new RuntimeException("An error occurred while updating user", e);
+                throw new RuntimeException("An error occurred while fetching tasks", e);
             }
         }
     }
 
-    private TaskVo mapEntitieToVo(Tasks task, List<SubTasks> subTasks) {
+    @Override
+    public ResponseEntity<?> getTasksByBoardId(String token, Long boardId) {
+    try {
+        String extractedToken = tokenService.validateToken(token);
+        String userEmail = tokenService.extractEmailFromToken(extractedToken);
+        Users user = userService.findUserByEmail(userEmail);
+        // پیدا کردن برد با ID مشخص شده
+        Boards board = boardService.findBoardsById(boardId);
+        if (board != null && board.getUser().equals(user)) {
+            
+        // دریافت تسک‌های مربوط به برد
+        Set<Tasks> tasks = board.getTasks();
+        List<TaskVo> taskVos = new ArrayList<>();
+
+        for (Tasks task : tasks) {
+            List<SubTasks> subTasks = subTaskRepository.findByTaskId(task.getId());
+            // پیدا کردن ID‌های تسک‌های وابسته به این تسک
+            List<Long> dependentTaskIds = task.getDependentTasks().stream()
+                    .map(Tasks::getId)
+                    .collect(Collectors.toList());
+
+            // تبدیل تسک‌ها به VO
+            TaskVo taskVo = mapEntityToVo(task, subTasks, dependentTaskIds);
+            taskVos.add(taskVo);
+        }
+
+        return new ResponseEntity<>(taskVos, HttpStatus.OK);
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body("Board with the specified ID not found.");
+
+    } catch (Exception e) {
+        if (e instanceof ExpiredTokenException || e instanceof InvalidTokenException
+                || e instanceof TokenValidationException) {
+            // Handle token related exceptions
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(e.getMessage());
+        } else {
+            // Handle other exceptions
+            throw new RuntimeException("An error occurred while fetching tasks by board ID", e);
+        }
+    }
+}
+
+    
+
+    private TaskVo mapEntityToVo(Tasks task, List<SubTasks> subTasks, List<Long> dependentTaskIds) {
         TaskVo taskVo = new TaskVo();
         taskVo.setId(task.getId());
         taskVo.setTaskName(task.getTaskName());
-        taskVo.setPriority(task.getPriority());
         taskVo.setDescription(task.getDescription());
         taskVo.setTaskStateId(task.getState().getId());
         taskVo.setBoardId(task.getBoard().getId());
@@ -290,9 +421,9 @@ public class TaskServiceImp implements TaskService {
             subTaskVos.add(subtaskVo);
         }
         taskVo.setSubTasks(subTaskVos);
-
+        taskVo.setDependentTaskIds(dependentTaskIds);  // اضافه کردن ID های وابسته
+    
         return taskVo;
-
     }
 
 }

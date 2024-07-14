@@ -23,9 +23,6 @@ public class Tasks {
     @Column
     private String description;
 
-    @Column
-    private String priority;
-
     @ManyToOne
     @JoinColumn(name = "user_id")
     private Users user;
@@ -40,5 +37,16 @@ public class Tasks {
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
     private Set<SubTasks> subTasks;
+
+    @ManyToMany
+    @JoinTable(
+        name = "task_dependencies",
+        joinColumns = @JoinColumn(name = "task_id"),
+        inverseJoinColumns = @JoinColumn(name = "dependent_task_id")
+    )
+    private Set<Tasks> dependentTasks;
+
+    @ManyToMany(mappedBy = "dependentTasks")
+    private Set<Tasks> dependentOnTasks;
 
 }

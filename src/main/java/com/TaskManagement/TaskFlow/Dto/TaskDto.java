@@ -1,12 +1,9 @@
 package com.TaskManagement.TaskFlow.Dto;
 
-
-
 import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
-
 
 @Getter
 @Setter
@@ -21,7 +18,6 @@ public class TaskDto {
     private Long boardId;
 
     private List<String> subTasks;
-
-    public String priority;
     
+    private List<Long> dependentTaskIds;
 }

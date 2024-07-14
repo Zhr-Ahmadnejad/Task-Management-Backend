@@ -26,4 +26,6 @@ public interface TaskService {
 
     ResponseEntity<?> getTasksinStart(String token);
 
+    ResponseEntity<?> getTasksByBoardId(String token, Long boardId);
+
 }
